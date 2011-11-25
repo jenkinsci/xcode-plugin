@@ -59,6 +59,8 @@ public class XCodeBuilder extends Builder {
     public final String sdk;
     public final String xcodeProjectPath;
     public final String xcodeProjectFile;
+    public final String xcodeSchema;
+    public final String xcodeWorkspaceFile;
     public final String embeddedProfileFile;
     public final String cfBundleVersionValue;
     public final String cfBundleShortVersionStringValue;
@@ -69,7 +71,7 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodeWorkspaceFile, String xcodeSchema, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -77,6 +79,8 @@ public class XCodeBuilder extends Builder {
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
+        this.xcodeWorkspaceFile = xcodeWorkspaceFile;
+        this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
@@ -211,7 +215,13 @@ public class XCodeBuilder extends Builder {
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
-        if (StringUtils.isEmpty(target)) {
+
+        // Priritizing schemaa over target setting
+        if(!StringUtils.isEmpty(xcodeSchema)) {
+            commandLine.add("-scheme");
+            commandLine.add(xcodeSchema);
+            xcodeReport.append(", scheme: ").append(xcodeSchema);
+        } else if (StringUtils.isEmpty(target)) {
             commandLine.add("-alltargets");
             xcodeReport.append("target: ALL");
         } else {
@@ -228,7 +238,12 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", sdk: DEFAULT");
         }
 
-        if (!StringUtils.isEmpty(xcodeProjectFile)) {
+        // Prioritizing workspace over project setting
+        if (!StringUtils.isEmpty(xcodeWorkspaceFile)) {
+            commandLine.add("-workspace");
+            commandLine.add(xcodeWorkspaceFile + ".xcworkspace");
+            xcodeReport.append(", workspace: ").append(xcodeWorkspaceFile);
+        } else if (!StringUtils.isEmpty(xcodeProjectFile)) {
             commandLine.add("-project");
             commandLine.add(xcodeProjectFile);
             xcodeReport.append(", project: ").append(xcodeProjectFile);

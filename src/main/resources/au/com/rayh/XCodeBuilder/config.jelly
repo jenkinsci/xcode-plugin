@@ -53,7 +53,17 @@
     </f:entry>
 
     <f:entry title="Xcode Project File" field="xcodeProjectFile"
-      description="Only needed if there is more than one project file in the Xcode Project Directory">
+      description="Only needed if there is more than one project file in the Xcode Project Directory.">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="Xcode Workspace File" field="xcodeWorkspaceFile"
+      description="Only needed if you want to compile a workspace instead of a project. It takes precedence over 'Xcode Project File' setting.">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="Xcode Schema File" field="xcodeSchema"
+      description="Only needed if you want to compile for a specific schema instead of a target. It takes precedence over 'Xcode Configuration' setting.">
         <f:textbox />
     </f:entry>
 
