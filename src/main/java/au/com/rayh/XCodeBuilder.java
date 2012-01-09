@@ -58,6 +58,10 @@ public class XCodeBuilder extends Builder {
      */
     public final Boolean cleanBeforeBuild;
     /**
+     * @since TODO
+     */
+    public final Boolean cleanTestReports;
+    /**
      * @since 1.0
      */
     public final String configuration;
@@ -85,6 +89,10 @@ public class XCodeBuilder extends Builder {
      * @since 1.0
      */
     public final String xcodeProjectFile;
+    /**
+     * @since TODO
+     */
+    private String xcodebuildArguments;
     /**
      * @since 1.2
      */
@@ -124,14 +132,16 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
+        this.cleanTestReports = cleanTestReports;
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
+        this.xcodebuildArguments = xcodebuildArguments;
         this.xcodeWorkspaceFile = xcodeWorkspaceFile;
         this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
@@ -293,8 +303,10 @@ public class XCodeBuilder extends Builder {
         }
 
         // remove test-reports and *.ipa
-        listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports").absolutize().getRemote()));
-        projectRoot.child("test-reports").deleteRecursive();
+        if (cleanTestReports != null && cleanTestReports) {
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports").absolutize().getRemote()));
+            projectRoot.child("test-reports").deleteRecursive();
+		}
 
         if (unlockKeychain) {
             // Let's unlock the keychain
@@ -375,6 +387,14 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
         } else {
             xcodeReport.append(", configurationBuildDir: DEFAULT");
+        }
+
+        // Additional (custom) xcodebuild arguments
+        if (!StringUtils.isEmpty(xcodebuildArguments)) {
+            String[] parts = xcodebuildArguments.split("[ ]");
+            for (String arg : parts) {
+                commandLine.add(arg);
+            }
         }
 
         listener.getLogger().println(xcodeReport.toString());

@@ -59,6 +59,11 @@
         <f:textbox default="Release"/>
     </f:entry>
 
+    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
+      help="/plugin/xcode/help-xcodebuildArguments.html">
+        <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
+    </f:entry>
+
     <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile"
       description="Only needed if you want to compile a workspace instead of a project.">
         <f:textbox />
@@ -87,6 +92,11 @@
     <f:entry title="${%Technical version}" field="cfBundleVersionValue"
       description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
         <f:textbox />
+    </f:entry>
+
+    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
+      help="/plugin/xcode/help-cleanTestReports.html">
+        <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
     </f:entry>
 
     <f:entry title="${%Build IPA?}" field="buildIpa"

@@ -1,0 +1,14 @@
+<div>
+  <p>
+    Arguments are currently separated by space, enclosing them in quotes won't help.
+  </p>
+  <p>
+    Passing custom arguments is convenient when you need to change some project options for Jenkins build,
+    but don't want them to persist in project file.
+    For example when running application tests, following settings often are nice fit:
+    <code>GCC_SYMBOLS_PRIVATE_EXTERN=NO COPY_PHASE_STRIP=NO</code>.
+    Otherwise Release build will usually fail because it won't be able to find application symbols to link with test bundle.
+  </p>
+</div>
+
+
