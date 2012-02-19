@@ -109,6 +109,11 @@
         <f:textbox />
     </f:entry>
 
+    <f:entry title="${%Signature Identity}" field="signatureIdentity"
+      description="The identity to use when signing the ipa-package, leave blank for default identity">
+        <f:textbox />
+    </f:entry>
+
     <f:entry title="${%Unlock Keychain?}" field="unlockKeychain"
       description="Automatically unlock the keychain before signing the archive?">
         <f:checkbox />
