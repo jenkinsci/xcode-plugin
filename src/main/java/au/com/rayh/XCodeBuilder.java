@@ -129,10 +129,14 @@ public class XCodeBuilder extends Builder {
      * @since 1.0
      */
     public final String keychainPwd;
+    /**
+     * @since 1.3.2
+     */
+    public final String codeSigningIdentity;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -145,6 +149,7 @@ public class XCodeBuilder extends Builder {
         this.xcodeWorkspaceFile = xcodeWorkspaceFile;
         this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
+        this.codeSigningIdentity = codeSigningIdentity;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
         this.unlockKeychain = unlockKeychain;
@@ -387,6 +392,14 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
         } else {
             xcodeReport.append(", configurationBuildDir: DEFAULT");
+        }
+
+        // handle code signing identities
+        if (!StringUtils.isEmpty(codeSigningIdentity)) {
+            commandLine.add("CODE_SIGN_IDENTITY=" + codeSigningIdentity);
+            xcodeReport.append(", codeSignIdentity: ").append(codeSigningIdentity);
+        } else {
+            xcodeReport.append(", codeSignIdentity: DEFAULT");
         }
 
         // Additional (custom) xcodebuild arguments
