@@ -106,6 +106,10 @@ public class XCodeBuilder extends Builder {
      */
     public final String embeddedProfileFile;
     /**
+     * @since 1.4
+     */
+    public final String signatureIdentity;
+    /**
      * @since 1.0
      */
     public final String cfBundleVersionValue;
@@ -132,7 +136,7 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String signatureIdentity, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -145,6 +149,7 @@ public class XCodeBuilder extends Builder {
         this.xcodeWorkspaceFile = xcodeWorkspaceFile;
         this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
+        this.signatureIdentity = signatureIdentity;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
         this.unlockKeychain = unlockKeychain;
@@ -450,6 +455,10 @@ public class XCodeBuilder extends Builder {
                 if (!StringUtils.isEmpty(embeddedProfileFile)) {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
+                }
+                if (!StringUtils.isEmpty(signatureIdentity)) {
+                   packageCommandLine.add("--sign");
+                   packageCommandLine.add(signatureIdentity);
                 }
 
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
