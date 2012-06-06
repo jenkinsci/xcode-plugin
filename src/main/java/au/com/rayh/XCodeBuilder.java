@@ -64,55 +64,55 @@ public class XCodeBuilder extends Builder {
     /**
      * @since 1.0
      */
-    public String configuration;
+    public final String configuration;
     /**
      * @since 1.0
      */
-    public String target;
+    public final String target;
     /**
      * @since 1.0
      */
-    public String sdk;
+    public final String sdk;
     /**
      * @since 1.1
      */
-    public String symRoot;
+    public final String symRoot;
     /**
      * @since 1.2
      */
-    public String configurationBuildDir;
+    public final String configurationBuildDir;
     /**
      * @since 1.0
      */
-    public String xcodeProjectPath;
+    public final String xcodeProjectPath;
     /**
      * @since 1.0
      */
-    public String xcodeProjectFile;
+    public final String xcodeProjectFile;
     /**
      * @since 1.3
      */
-    public String xcodebuildArguments;
+    public final String xcodebuildArguments;
     /**
      * @since 1.2
      */
-    public String xcodeSchema;
+    public final String xcodeSchema;
     /**
      * @since 1.2
      */
-    public String xcodeWorkspaceFile;
+    public final String xcodeWorkspaceFile;
     /**
      * @since 1.0
      */
-    public String embeddedProfileFile;
+    public final String embeddedProfileFile;
     /**
      * @since 1.0
      */
-    public String cfBundleVersionValue;
+    public final String cfBundleVersionValue;
     /**
      * @since 1.0
      */
-    public String cfBundleShortVersionStringValue;
+    public final String cfBundleShortVersionStringValue;
     /**
      * @since 1.0
      */
@@ -124,15 +124,15 @@ public class XCodeBuilder extends Builder {
     /**
      * @since 1.0
      */
-    public String keychainPath;
+    public final String keychainPath;
     /**
      * @since 1.0
      */
-    public String keychainPwd;
+    public final String keychainPwd;
     /**
      * @since 1.3.2
      */
-    public String codeSigningIdentity;
+    public final String codeSigningIdentity;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
