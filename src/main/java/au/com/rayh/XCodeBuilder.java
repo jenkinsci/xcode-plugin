@@ -64,55 +64,55 @@ public class XCodeBuilder extends Builder {
     /**
      * @since 1.0
      */
-    public final String configuration;
+    public String configuration;
     /**
      * @since 1.0
      */
-    public final String target;
+    public String target;
     /**
      * @since 1.0
      */
-    public final String sdk;
+    public String sdk;
     /**
      * @since 1.1
      */
-    public final String symRoot;
+    public String symRoot;
     /**
      * @since 1.2
      */
-    public final String configurationBuildDir;
+    public String configurationBuildDir;
     /**
      * @since 1.0
      */
-    public final String xcodeProjectPath;
+    public String xcodeProjectPath;
     /**
      * @since 1.0
      */
-    public final String xcodeProjectFile;
+    public String xcodeProjectFile;
     /**
      * @since 1.3
      */
-    public final String xcodebuildArguments;
+    public String xcodebuildArguments;
     /**
      * @since 1.2
      */
-    public final String xcodeSchema;
+    public String xcodeSchema;
     /**
      * @since 1.2
      */
-    public final String xcodeWorkspaceFile;
+    public String xcodeWorkspaceFile;
     /**
      * @since 1.0
      */
-    public final String embeddedProfileFile;
+    public String embeddedProfileFile;
     /**
      * @since 1.0
      */
-    public final String cfBundleVersionValue;
+    public String cfBundleVersionValue;
     /**
      * @since 1.0
      */
-    public final String cfBundleShortVersionStringValue;
+    public String cfBundleShortVersionStringValue;
     /**
      * @since 1.0
      */
@@ -124,15 +124,15 @@ public class XCodeBuilder extends Builder {
     /**
      * @since 1.0
      */
-    public final String keychainPath;
+    public String keychainPath;
     /**
      * @since 1.0
      */
-    public final String keychainPwd;
+    public String keychainPwd;
     /**
      * @since 1.3.2
      */
-    public final String codeSigningIdentity;
+    public String codeSigningIdentity;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -174,16 +174,35 @@ public class XCodeBuilder extends Builder {
             return false;
         }
 
+        // Start expanding all string variables in parameters
+        String expandedsdk = envs.expand(sdk);
+        String expandedtarget = envs.expand(target);
+        String expandedconfiguration = envs.expand(configuration);
+        String expandedxcodeProjectPath = envs.expand(xcodeProjectPath);
+        String expandedxcodeProjectFile = envs.expand(xcodeProjectFile);
+        String expandedxcodebuildArguments = envs.expand(xcodebuildArguments);
+        String expandedxcodeWorkspaceFile = envs.expand(xcodeWorkspaceFile);
+        String expandedxcodeSchema = envs.expand(xcodeSchema);
+        String expandedembeddedProfileFile = envs.expand(embeddedProfileFile);
+        String expandedcodeSigningIdentity = envs.expand(codeSigningIdentity);
+        String expandedcfBundleVersionValue = envs.expand(cfBundleVersionValue);
+        String expandedcfBundleShortVersionStringValue = envs.expand(cfBundleShortVersionStringValue);
+        String expandedkeychainPath = envs.expand(keychainPath);
+        String expandedkeychainPwd = envs.expand(keychainPwd);
+        String expandedsymRoot = envs.expand(symRoot);
+        String expandedconfigurationBuildDir = envs.expand(configurationBuildDir);
+        // End expanding all string variables in parameters
+        
         // Set the working directory
-        if (!StringUtils.isEmpty(xcodeProjectPath)) {
-            projectRoot = projectRoot.child(xcodeProjectPath);
+        if (!StringUtils.isEmpty(expandedxcodeProjectPath)) {
+            projectRoot = projectRoot.child(expandedxcodeProjectPath);
         }
         listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
 
         // Infer as best we can the build platform
         String buildPlatform = "iphoneos";
-        if (!StringUtils.isEmpty(sdk)) {
-            if (StringUtils.contains(sdk.toLowerCase(), "iphonesimulator")) {
+        if (!StringUtils.isEmpty(expandedsdk)) {
+            if (StringUtils.contains(expandedsdk.toLowerCase(), "iphonesimulator")) {
                 // Building for the simulator
                 buildPlatform = "iphonesimulator";
             }
@@ -192,11 +211,11 @@ public class XCodeBuilder extends Builder {
         // Set the build directory and the symRoot
         //
         String symRootValue = null;
-        if (!StringUtils.isEmpty(symRoot)) {
+        if (!StringUtils.isEmpty(expandedsymRoot)) {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+                symRootValue = TokenMacro.expandAll(build, listener, expandedsymRoot).trim();
             } catch (MacroEvaluationException e) {
                 listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
                 return false;
@@ -205,9 +224,9 @@ public class XCodeBuilder extends Builder {
 
         String configurationBuildDirValue = null;
         FilePath buildDirectory;
-        if (!StringUtils.isEmpty(configurationBuildDir)) {
+        if (!StringUtils.isEmpty(expandedconfigurationBuildDir)) {
             try {
-                configurationBuildDirValue = TokenMacro.expandAll(build, listener, configurationBuildDir).trim();
+                configurationBuildDirValue = TokenMacro.expandAll(build, listener, expandedconfigurationBuildDir).trim();
             } catch (MacroEvaluationException e) {
                 listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
                 return false;
@@ -219,10 +238,10 @@ public class XCodeBuilder extends Builder {
             buildDirectory = new FilePath(projectRoot.getChannel(), configurationBuildDirValue);
         } else if (symRootValue != null) {
             // If there is a SYMROOT specified, compute the build directory from that.
-            buildDirectory = new FilePath(projectRoot.getChannel(), symRootValue).child(configuration + "-" + buildPlatform);
+            buildDirectory = new FilePath(projectRoot.getChannel(), symRootValue).child(expandedconfiguration + "-" + buildPlatform);
         } else {
             // Assume its a build for the handset, not the simulator.
-            buildDirectory = projectRoot.child("build").child(configuration + "-" + buildPlatform);
+            buildDirectory = projectRoot.child("build").child(expandedconfiguration + "-" + buildPlatform);
         }
 
         // XCode Version
@@ -261,11 +280,11 @@ public class XCodeBuilder extends Builder {
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
 
         // Update the Marketing version (CFBundleShortVersionString)
-        if (!StringUtils.isEmpty(cfBundleShortVersionStringValue)) {
+        if (!StringUtils.isEmpty(expandedcfBundleShortVersionStringValue)) {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleShortVersionString = TokenMacro.expandAll(build, listener, cfBundleShortVersionStringValue);
+                cfBundleShortVersionString = TokenMacro.expandAll(build, listener, expandedcfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
@@ -280,11 +299,11 @@ public class XCodeBuilder extends Builder {
         }
 
         // Update the Technical version (CFBundleVersion)
-        if (!StringUtils.isEmpty(cfBundleVersionValue)) {
+        if (!StringUtils.isEmpty(expandedcfBundleVersionValue)) {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleVersion = TokenMacro.expandAll(build, listener, cfBundleVersionValue);
+                cfBundleVersion = TokenMacro.expandAll(build, listener, expandedcfBundleVersionValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
@@ -315,12 +334,12 @@ public class XCodeBuilder extends Builder {
 
         if (unlockKeychain) {
             // Let's unlock the keychain
-            launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
-            launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
-            if (StringUtils.isEmpty(keychainPwd))
-                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", expandedkeychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", expandedkeychainPath).stdout(listener).pwd(projectRoot).join();
+            if (StringUtils.isEmpty(expandedkeychainPwd))
+                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", expandedkeychainPath).stdout(listener).pwd(projectRoot).join();
             else
-                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", expandedkeychainPwd, expandedkeychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
             if (returnCode > 0) {
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
@@ -333,43 +352,43 @@ public class XCodeBuilder extends Builder {
         List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
 
         // Prioritizing schema over target setting
-        if (!StringUtils.isEmpty(xcodeSchema)) {
+        if (!StringUtils.isEmpty(expandedxcodeSchema)) {
             commandLine.add("-scheme");
-            commandLine.add(xcodeSchema);
-            xcodeReport.append(", scheme: ").append(xcodeSchema);
-        } else if (StringUtils.isEmpty(target)) {
+            commandLine.add(expandedxcodeSchema);
+            xcodeReport.append(", scheme: ").append(expandedxcodeSchema);
+        } else if (StringUtils.isEmpty(expandedtarget)) {
             commandLine.add("-alltargets");
             xcodeReport.append("target: ALL");
         } else {
             commandLine.add("-target");
-            commandLine.add(target);
-            xcodeReport.append("target: ").append(target);
+            commandLine.add(expandedtarget);
+            xcodeReport.append("target: ").append(expandedtarget);
         }
 
-        if (!StringUtils.isEmpty(sdk)) {
+        if (!StringUtils.isEmpty(expandedsdk)) {
             commandLine.add("-sdk");
-            commandLine.add(sdk);
-            xcodeReport.append(", sdk: ").append(sdk);
+            commandLine.add(expandedsdk);
+            xcodeReport.append(", sdk: ").append(expandedsdk);
         } else {
-            xcodeReport.append(", sdk: DEFAULT");
+            xcodeReport.append(", expandedsdk: DEFAULT");
         }
 
         // Prioritizing workspace over project setting
-        if (!StringUtils.isEmpty(xcodeWorkspaceFile)) {
+        if (!StringUtils.isEmpty(expandedxcodeWorkspaceFile)) {
             commandLine.add("-workspace");
-            commandLine.add(xcodeWorkspaceFile + ".xcworkspace");
-            xcodeReport.append(", workspace: ").append(xcodeWorkspaceFile);
-        } else if (!StringUtils.isEmpty(xcodeProjectFile)) {
+            commandLine.add(expandedxcodeWorkspaceFile + ".xcworkspace");
+            xcodeReport.append(", workspace: ").append(expandedxcodeWorkspaceFile);
+        } else if (!StringUtils.isEmpty(expandedxcodeProjectFile)) {
             commandLine.add("-project");
-            commandLine.add(xcodeProjectFile);
-            xcodeReport.append(", project: ").append(xcodeProjectFile);
+            commandLine.add(expandedxcodeProjectFile);
+            xcodeReport.append(", project: ").append(expandedxcodeProjectFile);
         } else {
             xcodeReport.append(", project: DEFAULT");
         }
 
         commandLine.add("-configuration");
-        commandLine.add(configuration);
-        xcodeReport.append(", configuration: ").append(configuration);
+        commandLine.add(expandedconfiguration);
+        xcodeReport.append(", configuration: ").append(expandedconfiguration);
 
         if (cleanBeforeBuild) {
             commandLine.add("clean");
@@ -395,16 +414,16 @@ public class XCodeBuilder extends Builder {
         }
 
         // handle code signing identities
-        if (!StringUtils.isEmpty(codeSigningIdentity)) {
-            commandLine.add("CODE_SIGN_IDENTITY=" + codeSigningIdentity);
-            xcodeReport.append(", codeSignIdentity: ").append(codeSigningIdentity);
+        if (!StringUtils.isEmpty(expandedcodeSigningIdentity)) {
+            commandLine.add("CODE_SIGN_IDENTITY=" + expandedcodeSigningIdentity);
+            xcodeReport.append(", codeSignIdentity: ").append(expandedcodeSigningIdentity);
         } else {
             xcodeReport.append(", codeSignIdentity: DEFAULT");
         }
 
         // Additional (custom) xcodebuild arguments
-        if (!StringUtils.isEmpty(xcodebuildArguments)) {
-            String[] parts = xcodebuildArguments.split("[ ]");
+        if (!StringUtils.isEmpty(expandedxcodebuildArguments)) {
+            String[] parts = expandedxcodebuildArguments.split("[ ]");
             for (String arg : parts) {
                 commandLine.add(arg);
             }
@@ -441,7 +460,7 @@ public class XCodeBuilder extends Builder {
                     version = cfBundleVersion;
 
                 String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
-                        configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
+                        expandedconfiguration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
 
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
@@ -454,15 +473,15 @@ public class XCodeBuilder extends Builder {
                 packageCommandLine.add(getDescriptor().getXcrunPath());
                 packageCommandLine.add("-sdk");
 
-                if (!StringUtils.isEmpty(sdk)) {
-                    packageCommandLine.add(sdk);
+                if (!StringUtils.isEmpty(expandedsdk)) {
+                    packageCommandLine.add(expandedsdk);
                 } else {
                     packageCommandLine.add(buildPlatform);
                 }
                 packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.absolutize().getRemote(), "-o", ipaLocation.absolutize().getRemote()));
-                if (!StringUtils.isEmpty(embeddedProfileFile)) {
+                if (!StringUtils.isEmpty(expandedembeddedProfileFile)) {
                     packageCommandLine.add("--embed");
-                    packageCommandLine.add(embeddedProfileFile);
+                    packageCommandLine.add(expandedembeddedProfileFile);
                 }
 
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
