@@ -247,6 +247,8 @@ public class XCodeBuilder extends Builder {
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringValue(cfBundleShortVersionString));
 
+        output.reset();
+
         // Try to read CFBundleVersion from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
         String cfBundleVersion = "";
@@ -259,6 +261,10 @@ public class XCodeBuilder extends Builder {
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleShortVersionString));
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
+        
+        String buildDescription = cfBundleShortVersionString + " (" + cfBundleVersion + ")";
+        XCodeAction a = new XCodeAction(buildDescription);
+        build.addAction(a);
 
         // Update the Marketing version (CFBundleShortVersionString)
         if (!StringUtils.isEmpty(cfBundleShortVersionStringValue)) {
