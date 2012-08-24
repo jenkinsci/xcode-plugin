@@ -133,10 +133,13 @@ public class XCodeBuilder extends Builder {
      * @since 1.3.2
      */
     public final String codeSigningIdentity;
+    public final String customXcodebuildPath;
+    public final String customAgvtoolPath;
+    public final String customXcrunPath;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, String customXcodebuildPath, String customAgvtoolPath, String customXcrunPath) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -157,20 +160,37 @@ public class XCodeBuilder extends Builder {
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
+        this.customXcodebuildPath = customXcodebuildPath;
+        this.customAgvtoolPath = customAgvtoolPath;
+        this.customXcrunPath = customXcrunPath;
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
         FilePath projectRoot = build.getWorkspace();
+        
+        // Choose the right path for the tools
+        String xcodebuildPath = this.customXcodebuildPath;
+        if (StringUtils.isEmpty(xcodebuildPath)) {
+        	xcodebuildPath = getDescriptor().getXcodebuildPath();
+        }
+        String agvtoolPath = this.customAgvtoolPath;
+        if (StringUtils.isEmpty(agvtoolPath)) {
+        	agvtoolPath = getDescriptor().getAgvtoolPath();
+        }
+        String xcrunPath = this.customXcrunPath;
+        if (StringUtils.isEmpty(xcrunPath)) {
+        	xcrunPath = getDescriptor().getXcrunPath();
+        }
 
         // check that the configured tools exist
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getXcodebuildPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().getXcodebuildPath()));
+        if (!new FilePath(projectRoot.getChannel(), xcodebuildPath).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(xcodebuildPath));
             return false;
         }
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getAgvtoolPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getDescriptor().getAgvtoolPath()));
+        if (!new FilePath(projectRoot.getChannel(), agvtoolPath).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(agvtoolPath));
             return false;
         }
 
@@ -226,7 +246,7 @@ public class XCodeBuilder extends Builder {
         }
 
         // XCode Version
-        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
+        int returnCode = launcher.launch().envs(envs).cmds(xcodebuildPath, "-version").stdout(listener).pwd(projectRoot).join();
         if (returnCode > 0) {
             listener.fatalError(Messages.XCodeBuilder_xcodeVersionNotFound());
             return false; // We fail the build if XCode isn't deployed
@@ -237,7 +257,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleShortVersionString from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         String cfBundleShortVersionString = "";
-        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(agvtoolPath, "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleShortVersionString = output.toString().trim();
@@ -250,7 +270,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleVersion from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
         String cfBundleVersion = "";
-        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(agvtoolPath, "vers", "-terse").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleVersion = output.toString().trim();
@@ -267,7 +287,7 @@ public class XCodeBuilder extends Builder {
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleShortVersionString = TokenMacro.expandAll(build, listener, cfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
-                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds(agvtoolPath, "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringUpdateError(cfBundleShortVersionString));
                     return false;
@@ -286,7 +306,7 @@ public class XCodeBuilder extends Builder {
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleVersion = TokenMacro.expandAll(build, listener, cfBundleVersionValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
-                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds(agvtoolPath, "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleVersionUpdateError(cfBundleVersion));
                     return false;
@@ -330,7 +350,7 @@ public class XCodeBuilder extends Builder {
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
-        List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
+        List<String> commandLine = Lists.newArrayList(xcodebuildPath);
 
         // Prioritizing schema over target setting
         if (!StringUtils.isEmpty(xcodeSchema)) {
@@ -451,7 +471,7 @@ public class XCodeBuilder extends Builder {
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation.absolutize().getRemote());
                 List<String> packageCommandLine = new ArrayList<String>();
-                packageCommandLine.add(getDescriptor().getXcrunPath());
+                packageCommandLine.add(xcrunPath);
                 packageCommandLine.add("-sdk");
 
                 if (!StringUtils.isEmpty(sdk)) {

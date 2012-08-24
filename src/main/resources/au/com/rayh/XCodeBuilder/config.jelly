@@ -29,6 +29,21 @@
 
     See global.jelly for a general discussion about jelly script.
   -->
+  	<f:entry title="${%xcodebuild executable path}" field="customXcodebuildPath" 
+  		description="Custom xcodebuild associated with this step. If none is specified, the default in global configuration will be used">
+      <f:textbox />
+    </f:entry>
+    
+    <f:entry title="${%agvtool executable path}" field="customAgvtoolPath"
+    	description="Custom agvtool associated with this step. If none is specified, the default in global configuration will be used">
+      <f:textbox />
+    </f:entry>
+    
+    <f:entry title="${%xcrun executable path}" field="customXcrunPath"
+    	description="Custom xcrun associated with this step. If none is specified, the default in global configuration will be used">
+      <f:textbox />
+    </f:entry>
+  
     <f:entry title="${%Clean before build?}" field="cleanBeforeBuild"
       description="This will delete the build directories before invoking the build.">
         <f:checkbox/>
