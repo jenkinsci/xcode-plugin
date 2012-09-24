@@ -315,6 +315,8 @@ public class XCodeBuilder extends Builder {
 
         if (unlockKeychain) {
             // Let's unlock the keychain
+            String keychainPath = getKeychainPath();
+            String keychainPwd = getKeychainPassword();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             if (StringUtils.isEmpty(keychainPwd))
@@ -485,6 +487,18 @@ public class XCodeBuilder extends Builder {
         return true;
     }
 
+    private boolean useJobSpecificKeychain() {
+        return keychainPath != null && !keychainPath.isEmpty();
+    }
+
+    private String getKeychainPath() {
+        return useJobSpecificKeychain() ? keychainPath : getDescriptor().getKeychainPath();
+    }
+
+    private String getKeychainPassword() {
+        return useJobSpecificKeychain() ? keychainPwd : getDescriptor().getKeychainPwd();
+    }
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
@@ -495,6 +509,8 @@ public class XCodeBuilder extends Builder {
         private String xcodebuildPath = "/usr/bin/xcodebuild";
         private String agvtoolPath = "/usr/bin/agvtool";
         private String xcrunPath = "/usr/bin/xcrun";
+        private String keychainPath;
+        private String keychainPwd;
 
         public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
             if (StringUtils.isEmpty(value)) {
@@ -561,6 +577,22 @@ public class XCodeBuilder extends Builder {
 
         public void setXcrunPath(String xcrunPath) {
             this.xcrunPath = xcrunPath;
+        }
+
+        public String getKeychainPath() {
+            return keychainPath;
+        }
+
+        public void setKeychainPath(String keychainPath) {
+            this.keychainPath = keychainPath;
+        }
+
+        public String getKeychainPwd() {
+            return keychainPwd;
+        }
+
+        public void setKeychainPwd(String keychainPwd) {
+            this.keychainPwd = keychainPwd;
         }
     }
 }

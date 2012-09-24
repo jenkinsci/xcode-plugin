@@ -33,5 +33,13 @@
     <f:entry title="${%xcrun executable path}" field="xcrunPath">
       <f:textbox default="/usr/bin/xcrun"/>
     </f:entry>
+    <f:entry title="${%Keychain path}" field="keychainPath"
+   	         description="The path of the keychain to use to sign the IPA.">
+   	  <f:textbox default="$${HOME}/Library/Keychains/login.keychain"/>
+   	</f:entry>
+    <f:entry title="${%Keychain password}" field="keychainPwd"
+   	         description="The password to use to unlock the keychain.">
+   	  <f:password />
+   	</f:entry>
   </f:section>
 </j:jelly>
