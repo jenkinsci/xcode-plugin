@@ -488,7 +488,7 @@ public class XCodeBuilder extends Builder {
     }
 
     private boolean useJobSpecificKeychain() {
-        return keychainPath != null && !keychainPath.isEmpty();
+        return !StringUtils.isEmpty(keychainPath);
     }
 
     private String getKeychainPath() {
