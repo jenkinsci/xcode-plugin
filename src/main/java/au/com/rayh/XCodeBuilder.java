@@ -472,7 +472,7 @@ public class XCodeBuilder extends Builder {
                 }
 
                 // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.absolutize().getRemote() + ".dSYM").join();
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("ditto", "-c", "-k", "--keepParent", "-rsrc", baseName + "-dSYM.zip", app.absolutize().getRemote() + ".dSYM").join();
                 if (returnCode > 0) {
                     listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
                     continue;
