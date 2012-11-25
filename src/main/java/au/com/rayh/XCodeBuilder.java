@@ -464,6 +464,10 @@ public class XCodeBuilder extends Builder {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
                 }
+                if (!StringUtils.isEmpty(codeSigningIdentity)) {                   
+                    packageCommandLine.add("--sign");
+                    packageCommandLine.add(codeSigningIdentity);
+                }
 
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
                 if (returnCode > 0) {
