@@ -440,8 +440,9 @@ public class XCodeBuilder extends Builder {
 
         // Additional (custom) xcodebuild arguments
         if (!StringUtils.isEmpty(xcodebuildArguments)) {
-            String[] parts = xcodebuildArguments.split("[ ]");
+            String[] parts = xcodebuildArguments.split("(?<!\\\\)\\s+");
             for (String arg : parts) {
+		arg = arg.replaceAll("\\\\ ", " ");
                 commandLine.add(arg);
             }
         }
