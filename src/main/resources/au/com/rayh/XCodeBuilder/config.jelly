@@ -103,6 +103,11 @@
       description="Checking this option will create a .ipa for each .app found in the build directory.">
         <f:checkbox />
     </f:entry>
+    
+    <f:entry title="${%IPA Name same as target?}" field="ipaNameSameAsTarget"
+      description="Checking this option will name .ipa same as target name. For example if you want to use a TestFlight plugin.">
+        <f:checkbox />
+    </f:entry>
 
     <f:entry title="${%Code Signing Identity}" field="codeSigningIdentity"
       description="Override the code signing identity specified in the project">
