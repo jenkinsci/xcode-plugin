@@ -29,9 +29,15 @@
 
 package au.com.rayh;
 
+import hudson.FilePath;
+import hudson.console.ConsoleNote;
+import hudson.model.TaskListener;
+
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,19 +47,51 @@ import org.junit.Test;
  *
  * @author ray
  */
-public class XCodeBuildOutputParserTest {
+public class HudsonXCodeBuildOutputParserTest {
     OutputParserTests test;
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-        XCodeBuildOutputParser parser = new XCodeBuildOutputParser(new File("."), new PrintStream("test-output.txt"));
+        HudsonXCodeBuildOutputParser parser = new HudsonXCodeBuildOutputParser(new FilePath(new File(".")), new TaskListener() {
+
+            public PrintStream getLogger() {
+                try {
+                    return new PrintStream("test-output.txt");
+                } catch(FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public void annotate(ConsoleNote consoleNote) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void hyperlink(String s, String s1) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PrintWriter error(String string) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PrintWriter error(String string, Object... os) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PrintWriter fatalError(String string) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public PrintWriter fatalError(String string, Object... os) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        });
         test = new OutputParserTests(parser);
     }
 
     @After
     public void tearDown() {
     }
-
     @Test
     public void shouldIgnoreStartSuiteLineThatContainsFullPath() throws Exception {
     	test.shouldIgnoreStartSuiteLineThatContainsFullPath();
