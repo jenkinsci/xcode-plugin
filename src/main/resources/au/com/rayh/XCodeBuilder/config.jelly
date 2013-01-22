@@ -39,8 +39,8 @@
         <f:textbox/>
     </f:entry>
 
-    <f:entry title="${%Xcode Schema File}" field="xcodeSchema"
-      description="Only needed if you want to compile for a specific schema instead of a target.">
+    <f:entry title="${%Xcode Scheme}" field="xcodeSchema"
+      description="Only needed if you want to compile a scheme instead of a target.">
         <f:textbox />
     </f:entry>
 
@@ -55,7 +55,7 @@
     </f:entry>
 
     <f:entry title="${%Configuration}" field="configuration"
-      description="This is the name of the configuration as defined in the XCode project.">
+      description="This is the name of the configuration as defined in the Xcode project.">
         <f:textbox default="Release"/>
     </f:entry>
 
@@ -97,6 +97,15 @@
     <f:entry title="${%Clean test reports?}" field="cleanTestReports"
       help="/plugin/xcode/help-cleanTestReports.html">
         <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
+    </f:entry>
+
+    <f:entry title="${%xcodebuild action?}" help="/plugin/xcode/help-action.html">
+        <select name="xcodebuildAction">
+            <f:option value="build" selected="${instance.xcodebuildAction=='build'}">build</f:option>
+            <f:option value="archive" selected="${instance.xcodebuildAction=='archive'}">archive</f:option>
+            <f:option value="test" selected="${instance.xcodebuildAction=='test'}">test</f:option>
+            <f:option value="clean" selected="${instance.xcodebuildAction=='clean'}">clean</f:option>
+        </select>
     </f:entry>
 
     <f:entry title="${%Build IPA?}" field="buildIpa"
