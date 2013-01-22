@@ -28,5 +28,5 @@
   Since we don't really have anything dynamic here, let's just use static HTML. 
 -->
 <div>
-  This plugin provides builders to build xcode projects, invoke agvtool and package .ipa files
+  This plugin provides builders to build Xcode projects, invoke agvtool and package .ipa files
 </div>

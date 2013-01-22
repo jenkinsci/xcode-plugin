@@ -135,9 +135,14 @@ public class XCodeBuilder extends Builder {
      */
     public final String codeSigningIdentity;
 
+    /**
+     * @since 1.x
+     */
+    public final String xcodebuildAction;
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, String xcodebuildAction) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -158,6 +163,12 @@ public class XCodeBuilder extends Builder {
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
+        if(null == xcodebuildAction){
+            this.xcodebuildAction = "build";
+        }
+        else{
+            this.xcodebuildAction = xcodebuildAction;
+        }
     }
 
     @Override
@@ -410,6 +421,7 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", sdk: DEFAULT");
         }
+        xcodeReport.append(". xcodebuildAction: ").append(this.xcodebuildAction);
 
         // Prioritizing workspace over project setting
         if (!StringUtils.isEmpty(xcodeWorkspaceFile)) {
@@ -434,7 +446,9 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", clean: NO");
         }
-        commandLine.add("build");
+        
+        commandLine.add(this.xcodebuildAction);
+        
 
         if (!StringUtils.isEmpty(symRootValue)) {
             commandLine.add("SYMROOT=" + symRootValue);
