@@ -134,10 +134,18 @@ public class XCodeBuilder extends Builder {
      * @since 1.3.2
      */
     public final String codeSigningIdentity;
+    /**
+     * @since 1.3.2.x
+     */
+    public final String mobileProvisioningId;
+    /**
+     * @since 1.3.2.x
+     */
+    public final String customBuildSuffix;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, String mobileProvisioningId, String customBuildSuffix) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -151,6 +159,7 @@ public class XCodeBuilder extends Builder {
         this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
         this.codeSigningIdentity = codeSigningIdentity;
+        this.mobileProvisioningId = mobileProvisioningId;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
         this.unlockKeychain = unlockKeychain;
@@ -158,6 +167,7 @@ public class XCodeBuilder extends Builder {
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
+        this.customBuildSuffix = customBuildSuffix;
     }
 
     @Override
@@ -193,6 +203,8 @@ public class XCodeBuilder extends Builder {
         String keychainPath = envs.expand(this.keychainPath);
         String keychainPwd = envs.expand(this.keychainPwd);
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
+        String mobileProvisioningId = envs.expand(this.mobileProvisioningId);
+        String customBuildSuffix = envs.expand(this.customBuildSuffix);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -458,6 +470,13 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", codeSignIdentity: DEFAULT");
         }
+        // append mobile provisioning file
+        if (!StringUtils.isEmpty(mobileProvisioningId)) {
+            commandLine.add("PROVISIONING_PROFILE=" + mobileProvisioningId);
+            xcodeReport.append(", provisioningProfile: ").append(mobileProvisioningId);
+        } else {
+            xcodeReport.append(", provisioningProfile: DEFAULT");
+        }
 
         // Additional (custom) xcodebuild arguments
         if (!StringUtils.isEmpty(xcodebuildArguments)) {
@@ -503,6 +522,10 @@ public class XCodeBuilder extends Builder {
                     version = cfBundleShortVersionString;
                 else
                     version = cfBundleVersion;
+
+                if(customBuildSuffix.length() > 0) {
+                    version = customBuildSuffix;
+                }
 
                 String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
                         configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);

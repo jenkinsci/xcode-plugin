@@ -94,6 +94,11 @@
         <f:textbox />
     </f:entry>
 
+    <f:entry title="${%Custom Suffix}" field="customBuildSuffix"
+      description="Suffix to be used instead of Version number on Build Artifacts, leave blank for no custom suffix">
+        <f:textbox />
+    </f:entry>
+
     <f:entry title="${%Clean test reports?}" field="cleanTestReports"
       help="/plugin/xcode/help-cleanTestReports.html">
         <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
@@ -106,6 +111,11 @@
 
     <f:entry title="${%Code Signing Identity}" field="codeSigningIdentity"
       description="Override the code signing identity specified in the project">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="${%Provisioning Profile}" field="mobileProvisioningId"
+      description="Override the provisioning profile specified in the project">
         <f:textbox />
     </f:entry>
 
