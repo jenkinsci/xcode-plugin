@@ -55,7 +55,7 @@
     </f:entry>
 
     <f:entry title="${%Configuration}" field="configuration"
-      description="This is the name of the configuration as defined in the XCode project.">
+      description="This is the name of the configuration as defined in the Xcode project.">
         <f:textbox default="Release"/>
     </f:entry>
 

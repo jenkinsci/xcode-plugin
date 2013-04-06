@@ -587,6 +587,10 @@ public class XCodeBuilder extends Builder {
         private String keychainPath;
         private String keychainPwd;
 
+        public DescriptorImpl() {
+            load();
+        }
+
         public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
