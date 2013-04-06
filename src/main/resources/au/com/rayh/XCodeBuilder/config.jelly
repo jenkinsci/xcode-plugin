@@ -121,7 +121,7 @@
 
     <f:entry title="${%Keychain path}" field="keychainPath"
    	  description="The path of the keychain to use to sign the IPA.">
-   	  <f:textbox default="$${HOME}/Library/Keychains/login.keychain"/>
+   	  <f:textbox />
    	</f:entry>
 
     <f:entry title="${%Keychain password}" field="keychainPwd"
