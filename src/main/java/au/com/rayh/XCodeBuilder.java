@@ -34,6 +34,7 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.CopyOnWriteList;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -47,7 +48,6 @@ import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -123,6 +123,10 @@ public class XCodeBuilder extends Builder {
      */
     public final Boolean unlockKeychain;
     /**
+     * @since 1.4
+     */
+    public final String keychainName;
+    /**
      * @since 1.0
      */
     public final String keychainPath;
@@ -137,7 +141,7 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -147,6 +151,7 @@ public class XCodeBuilder extends Builder {
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
         this.xcodebuildArguments = xcodebuildArguments;
+        this.keychainName = keychainName;
         this.xcodeWorkspaceFile = xcodeWorkspaceFile;
         this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
@@ -190,8 +195,6 @@ public class XCodeBuilder extends Builder {
         String embeddedProfileFile = envs.expand(this.embeddedProfileFile);
         String cfBundleVersionValue = envs.expand(this.cfBundleVersionValue);
         String cfBundleShortVersionStringValue = envs.expand(this.cfBundleShortVersionStringValue);
-        String keychainPath = envs.expand(this.keychainPath);
-        String keychainPwd = envs.expand(this.keychainPwd);
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
         // End expanding all string variables in parameters  
 
@@ -342,6 +345,14 @@ public class XCodeBuilder extends Builder {
 
         if (unlockKeychain) {
             // Let's unlock the keychain
+            Keychain keychain = getKeychain();
+            if(keychain == null)
+            {
+                listener.fatalError(Messages.XCodeBuilder_keychainNotConfigured());
+                return false;
+            }
+            String keychainPath = envs.expand(keychain.getKeychainPath());
+            String keychainPwd = envs.expand(keychain.getKeychainPassword());
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             if (StringUtils.isEmpty(keychainPwd))
@@ -553,6 +564,19 @@ public class XCodeBuilder extends Builder {
         return true;
     }
 
+    public Keychain getKeychain() {
+        if(!StringUtils.isEmpty(keychainPath)) {
+            return new Keychain("", keychainPath, keychainPwd);
+        }
+
+        for (Keychain keychain : getDescriptor().getKeychains()) {
+            if(keychain.getKeychainName().equals(keychainName))
+                return keychain;
+        }
+
+        return null;
+    }
+
     static List<String> splitXcodeBuildArguments(String xcodebuildArguments) {
         String[] parts = xcodebuildArguments.split("(?<!\\\\)\\s+");
         List<String> result = new ArrayList<String>(parts.length);
@@ -572,6 +596,7 @@ public class XCodeBuilder extends Builder {
         private String xcodebuildPath = "/usr/bin/xcodebuild";
         private String agvtoolPath = "/usr/bin/agvtool";
         private String xcrunPath = "/usr/bin/xcrun";
+        private final CopyOnWriteList<Keychain> keychains = new CopyOnWriteList<Keychain>();
 
         public DescriptorImpl() {
             load();
@@ -616,6 +641,7 @@ public class XCodeBuilder extends Builder {
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             req.bindJSON(this, formData);
+            keychains.replaceBy(req.bindParametersToList(Keychain.class, "keychain."));
             save();
             return super.configure(req, formData);
         }
@@ -642,6 +668,10 @@ public class XCodeBuilder extends Builder {
 
         public void setXcrunPath(String xcrunPath) {
             this.xcrunPath = xcrunPath;
+        }
+
+        public Iterable<Keychain> getKeychains() {
+            return keychains;
         }
     }
 }
