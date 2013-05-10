@@ -37,18 +37,25 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import com.dd.plist.*;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Date;
+import java.util.Map;
+import java.util.HashMap;
+import java.text.SimpleDateFormat;
 
 /**
  * @author Ray Hilton
@@ -134,10 +141,14 @@ public class XCodeBuilder extends Builder {
      * @since 1.3.2
      */
     public final String codeSigningIdentity;
+    /**
+     * @since 1.4.0
+     */
+    public final String ipaName;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, String ipaName) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -158,6 +169,7 @@ public class XCodeBuilder extends Builder {
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
+        this.ipaName = ipaName;
     }
 
     @Override
@@ -193,6 +205,7 @@ public class XCodeBuilder extends Builder {
         String keychainPath = envs.expand(this.keychainPath);
         String keychainPwd = envs.expand(this.keychainPwd);
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
+        String ipaName = envs.expand(this.ipaName);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -496,16 +509,38 @@ public class XCodeBuilder extends Builder {
             }
 
             for (FilePath app : apps) {
-                String version;
-                if (StringUtils.isEmpty(cfBundleShortVersionString) && StringUtils.isEmpty(cfBundleVersion))
-                    version = Integer.toString(build.getNumber());
-                else if (StringUtils.isEmpty(cfBundleVersion))
-                    version = cfBundleShortVersionString;
-                else
-                    version = cfBundleVersion;
+                String version = "";
+                try {
+                    File file = new File(app.absolutize().child("Info.plist").getRemote());
 
-                String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
-                        configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
+                    NSDictionary rootDict = (NSDictionary)PropertyListParser.parse(file);
+                    version = rootDict.objectForKey("CFBundleVersion").toString();
+
+                    if (StringUtils.isEmpty(version)) {
+                        version = rootDict.objectForKey("CFBundleShortVersionString").toString();
+                    }
+
+                    if (StringUtils.isEmpty(version)) {
+                        version = Integer.toString(build.getNumber());
+                    }
+                } 
+                catch(Exception ex) {
+                    listener.getLogger().println("Failed to get version: " + ex.toString());
+                }
+
+                File file = new File(app.absolutize().getRemote());
+                String lastModified = new SimpleDateFormat("yyyy.MM.dd").format(new Date(file.lastModified()));
+
+                String baseName = app.getBaseName().replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "_" + version) + "_" + lastModified;
+                // Custom name stuff
+                if (! StringUtils.isEmpty(ipaName)) {
+                    Map valuesMap = new HashMap();
+                    valuesMap.put("VERSION", version);
+                    valuesMap.put("BUILD_DATE", lastModified);
+
+                    StrSubstitutor sub = new StrSubstitutor(valuesMap);
+                    baseName = sub.replace(ipaName);
+                }
 
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
