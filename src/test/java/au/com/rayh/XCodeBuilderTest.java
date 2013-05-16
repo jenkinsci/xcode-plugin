@@ -59,5 +59,7 @@ public class XCodeBuilderTest {
             XCodeBuilder.splitXcodeBuildArguments("CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
         assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
             XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
+        assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution", "C=D"),
+            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution\" C=D"));
     }
 }
