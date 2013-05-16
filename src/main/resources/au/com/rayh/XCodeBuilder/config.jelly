@@ -34,6 +34,11 @@
         <f:checkbox/>
     </f:entry>
 
+    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
+      help="/plugin/xcode/help-cleanTestReports.html">
+        <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
+    </f:entry>
+
     <f:entry title="${%Target}" field="target"
       description="Leave empty for all targets">
         <f:textbox/>
@@ -92,11 +97,6 @@
     <f:entry title="${%Technical version}" field="cfBundleVersionValue"
       description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
         <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
-      help="/plugin/xcode/help-cleanTestReports.html">
-        <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
     </f:entry>
 
     <f:entry title="${%Build IPA?}" field="buildIpa"
