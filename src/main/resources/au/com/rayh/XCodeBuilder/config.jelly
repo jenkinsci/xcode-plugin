@@ -129,4 +129,9 @@
    	  <f:password />
    	</f:entry>
 
+    <f:entry title="${%Allow failing build results?}" field="allowFailingBuildResults"
+      description="Checking this option will prevent this build step from failing if xcodebuild exits with a non-zero return code.">
+        <f:checkbox />
+    </f:entry>
+
 </j:jelly>
