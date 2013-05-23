@@ -38,18 +38,26 @@ import hudson.util.CopyOnWriteList;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import com.dd.plist.*;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.Date;
+import java.util.Map;
+import java.util.HashMap;
+import java.text.SimpleDateFormat;
 
 /**
  * @author Ray Hilton
@@ -143,10 +151,17 @@ public class XCodeBuilder extends Builder {
      * @since 1.4
      */
     public final Boolean allowFailingBuildResults;
+    /**
+     * @since 1.4.0
+     */
+    public final String ipaName;
+    
+    protected String defaultKeychain;
+    protected String[] keychains;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, String ipaName, Boolean allowFailingBuildResults) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -169,6 +184,7 @@ public class XCodeBuilder extends Builder {
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
         this.allowFailingBuildResults = allowFailingBuildResults;
+        this.ipaName = ipaName;
     }
 
     @Override
@@ -202,6 +218,7 @@ public class XCodeBuilder extends Builder {
         String cfBundleVersionValue = envs.expand(this.cfBundleVersionValue);
         String cfBundleShortVersionStringValue = envs.expand(this.cfBundleShortVersionStringValue);
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
+        String ipaName = envs.expand(this.ipaName);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -350,6 +367,25 @@ public class XCodeBuilder extends Builder {
 		}
 
         if (unlockKeychain != null && unlockKeychain) {
+            // Get the current keychains and default keychain
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains").stdout(outputStream).pwd(projectRoot).join();
+            
+            String _keychains = new String(outputStream.toByteArray(), Charset.defaultCharset());
+            keychains = _keychains.split("\\r?\\n");
+            for (int i = 0; i < keychains.length; i++) {
+                String line = keychains[i];
+                keychains[i] = line.trim();
+            }
+            
+            outputStream.reset();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain").stdout(outputStream).pwd(projectRoot).join();
+            
+            defaultKeychain = (new String(outputStream.toByteArray(), Charset.defaultCharset())).trim();
+            
+            // System.out.println("Def keychain: " + defaultKeychain);
+            // System.out.println("All keychains: " + StringUtils.join(keychains, ", "));
+            
             // Let's unlock the keychain
             Keychain keychain = getKeychain();
             if(keychain == null)
@@ -361,15 +397,19 @@ public class XCodeBuilder extends Builder {
             String keychainPwd = envs.expand(keychain.getKeychainPassword());
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
-            launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
             if (StringUtils.isEmpty(keychainPwd))
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
             else
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
+            
             if (returnCode > 0) {
+                this.restoreKeychains(launcher, listener, projectRoot, envs);
+                
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
             }
+            else
+                launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
         }
 
         // display useful setup information
@@ -398,7 +438,10 @@ public class XCodeBuilder extends Builder {
                 commandLine.add(xcodeProjectFile);
             }
             returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(listener).pwd(projectRoot).join();
-            if (returnCode > 0) return false;
+            if (returnCode > 0) {
+                this.restoreKeychains(launcher, listener, projectRoot, envs);
+                return false;
+            }
         }
         listener.getLogger().println(Messages.XCodeBuilder_DebugInfoLineDelimiter());
 
@@ -448,12 +491,16 @@ public class XCodeBuilder extends Builder {
 			xcodeReport.append(", configuration: ").append(configuration);
 		}
 
+        // Add the build number
+        commandLine.add("BUILD_NUMBER=" + envs.get("BUILD_NUMBER", "0"));
+        
         if (cleanBeforeBuild) {
             commandLine.add("clean");
             xcodeReport.append(", clean: YES");
         } else {
             xcodeReport.append(", clean: NO");
         }
+        
         commandLine.add("build");
 
         if (!StringUtils.isEmpty(symRootValue)) {
@@ -487,6 +534,9 @@ public class XCodeBuilder extends Builder {
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
         if (allowFailingBuildResults != null && allowFailingBuildResults.booleanValue() == false) {
+			// Unlock the default keychains after building
+	        this.restoreKeychains(launcher, listener, projectRoot, envs);
+
             if (reportGenerator.getExitCode() != 0) return false;
             if (returnCode > 0) return false;
         }
@@ -517,16 +567,38 @@ public class XCodeBuilder extends Builder {
             }
 
             for (FilePath app : apps) {
-                String version;
-                if (StringUtils.isEmpty(cfBundleShortVersionString) && StringUtils.isEmpty(cfBundleVersion))
-                    version = Integer.toString(build.getNumber());
-                else if (StringUtils.isEmpty(cfBundleVersion))
-                    version = cfBundleShortVersionString;
-                else
-                    version = cfBundleVersion;
+                String version = "";
+                try {
+                    File file = new File(app.absolutize().child("Info.plist").getRemote());
 
-                String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
-                        configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
+                    NSDictionary rootDict = (NSDictionary)PropertyListParser.parse(file);
+                    version = rootDict.objectForKey("CFBundleVersion").toString();
+
+                    if (StringUtils.isEmpty(version)) {
+                        version = rootDict.objectForKey("CFBundleShortVersionString").toString();
+                    }
+
+                    if (StringUtils.isEmpty(version)) {
+                        version = Integer.toString(build.getNumber());
+                    }
+                } 
+                catch(Exception ex) {
+                    listener.getLogger().println("Failed to get version: " + ex.toString());
+                }
+
+                File file = new File(app.absolutize().getRemote());
+                String lastModified = new SimpleDateFormat("yyyy.MM.dd").format(new Date(file.lastModified()));
+
+                String baseName = app.getBaseName().replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "_" + version) + "_" + lastModified;
+                // Custom name stuff
+                if (! StringUtils.isEmpty(ipaName)) {
+                    Map valuesMap = new HashMap();
+                    valuesMap.put("VERSION", version);
+                    valuesMap.put("BUILD_DATE", lastModified);
+
+                    StrSubstitutor sub = new StrSubstitutor(valuesMap);
+                    baseName = sub.replace(ipaName);
+                }
 
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
@@ -580,6 +652,23 @@ public class XCodeBuilder extends Builder {
         IN_DOUBLE_QUOTE,
         ESCAPE_CHAR
     };
+    
+    protected void restoreKeychains(Launcher launcher, BuildListener listener, FilePath projectRoot, EnvVars envs) throws java.io.IOException, java.lang.InterruptedException {
+        if (keychains == null) return;
+        
+        ArrayList<String> parameters = new ArrayList<String>() {{
+            add("/usr/bin/security");
+            add("list-keychains");
+            add("-s");
+        }};
+
+        for (String s : keychains) {
+            parameters.add(s.substring(1, s.length() - 1));
+        }
+
+        launcher.launch().envs(envs).cmds(parameters).stdout(listener).pwd(projectRoot).join();
+        launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", defaultKeychain.substring(1, defaultKeychain.length() - 1)).stdout(listener).pwd(projectRoot).join();
+    }
 
     public Keychain getKeychain() {
         if(!StringUtils.isEmpty(keychainPath)) {
