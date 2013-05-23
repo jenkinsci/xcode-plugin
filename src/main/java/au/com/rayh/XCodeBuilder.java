@@ -442,9 +442,11 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", project: DEFAULT");
         }
 
-        commandLine.add("-configuration");
-        commandLine.add(configuration);
-        xcodeReport.append(", configuration: ").append(configuration);
+		if (!StringUtils.isEmpty(configuration)) {
+			commandLine.add("-configuration");
+			commandLine.add(configuration);
+			xcodeReport.append(", configuration: ").append(configuration);
+		}
 
         if (cleanBeforeBuild) {
             commandLine.add("clean");
