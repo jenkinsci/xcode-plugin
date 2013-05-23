@@ -49,6 +49,7 @@ import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -145,6 +146,9 @@ public class XCodeBuilder extends Builder {
      * @since 1.4.0
      */
     public final String ipaName;
+    
+    protected String defaultKeychain;
+    protected String[] keychains;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -354,6 +358,25 @@ public class XCodeBuilder extends Builder {
 		}
 
         if (unlockKeychain) {
+            // Get the current keychains and default keychain
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains").stdout(outputStream).pwd(projectRoot).join();
+            
+            String _keychains = new String(outputStream.toByteArray(), Charset.defaultCharset());
+            keychains = _keychains.split("\\r?\\n");
+            for (int i = 0; i < keychains.length; i++) {
+                String line = keychains[i];
+                keychains[i] = line.trim();
+            }
+            
+            outputStream.reset();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain").stdout(outputStream).pwd(projectRoot).join();
+            
+            defaultKeychain = (new String(outputStream.toByteArray(), Charset.defaultCharset())).trim();
+            
+            // System.out.println("Def keychain: " + defaultKeychain);
+            // System.out.println("All keychains: " + StringUtils.join(keychains, ", "));
+            
             // Let's unlock the keychain
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
@@ -362,6 +385,8 @@ public class XCodeBuilder extends Builder {
             else
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
             if (returnCode > 0) {
+                this.restoreKeychains(launcher, listener, projectRoot, envs);
+                
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
             }
@@ -393,7 +418,10 @@ public class XCodeBuilder extends Builder {
                 commandLine.add(xcodeProjectFile);
             }
             returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(listener).pwd(projectRoot).join();
-            if (returnCode > 0) return false;
+            if (returnCode > 0) {
+                this.restoreKeychains(launcher, listener, projectRoot, envs);
+                return false;
+            }
         }
         listener.getLogger().println(Messages.XCodeBuilder_DebugInfoLineDelimiter());
 
@@ -441,12 +469,16 @@ public class XCodeBuilder extends Builder {
         commandLine.add(configuration);
         xcodeReport.append(", configuration: ").append(configuration);
 
+        // Add the build number
+        commandLine.add("BUILD_NUMBER=" + envs.get("BUILD_NUMBER", "0"));
+        
         if (cleanBeforeBuild) {
             commandLine.add("clean");
             xcodeReport.append(", clean: YES");
         } else {
             xcodeReport.append(", clean: NO");
         }
+        
         commandLine.add("build");
 
         if (!StringUtils.isEmpty(symRootValue)) {
@@ -479,6 +511,10 @@ public class XCodeBuilder extends Builder {
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
+        
+        // Unlock the default keychains after building
+        this.restoreKeychains(launcher, listener, projectRoot, envs);
+        
         if (reportGenerator.getExitCode() != 0) return false;
         if (returnCode > 0) return false;
 
@@ -586,6 +622,21 @@ public class XCodeBuilder extends Builder {
         }
 
         return true;
+    }
+    
+    protected void restoreKeychains(Launcher launcher, BuildListener listener, FilePath projectRoot, EnvVars envs) throws java.io.IOException, java.lang.InterruptedException {
+        ArrayList<String> parameters = new ArrayList<String>() {{
+            add("/usr/bin/security");
+            add("list-keychains");
+            add("-s");
+        }};
+
+        for (String s : keychains) {
+            parameters.add(s.substring(1, s.length() - 1));
+        }
+
+        launcher.launch().envs(envs).cmds(parameters).stdout(listener).pwd(projectRoot).join();
+        launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", defaultKeychain.substring(1, defaultKeychain.length() - 1)).stdout(listener).pwd(projectRoot).join();
     }
 
     static List<String> splitXcodeBuildArguments(String xcodebuildArguments) {
