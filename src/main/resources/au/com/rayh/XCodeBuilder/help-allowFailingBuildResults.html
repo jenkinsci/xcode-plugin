@@ -1,7 +1,7 @@
 <!--
   ~ The MIT License
   ~
-  ~ Copyright (c) 2011 Ray Yamamoto Hilton
+  ~ Copyright (c) 2013 Tim Ekl
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
   -->
 
 <div>
-    <p>
-        Automatically unlock the keychain before signing the archive? Please note, that you will have to restore your default keychains in a post-build script action.
-    </p>
+  <p>
+    Checking this option will prevent a build step from failing if <tt>xcodebuild</tt> exits with a non-zero return code.<br/>
+    This can be useful for build steps that run unit tests and also have a post-build task to publish unit test results: the test step will not fail the entire build for a failing unit test, but will instead mark the build unstable in the "publish test" phase.<br/>
 </div>
