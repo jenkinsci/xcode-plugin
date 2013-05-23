@@ -33,5 +33,34 @@
     <f:entry title="${%xcrun executable path}" field="xcrunPath">
       <f:textbox default="/usr/bin/xcrun"/>
     </f:entry>
+
+    <f:entry title="${%Keychains}" description="Saved keychain configurations">
+      <f:repeatable var="keychain" items="${descriptor.keychains}">
+        <table width="100%">
+          <f:entry title="${%Keychain Name}"
+                   description="An assigned name for identifying this keychain within Jenkins."
+                   field="keychainName">
+            <f:textbox name="keychain.keychainName" value="${keychain.keychainName}" />
+          </f:entry>
+          <f:entry title="${%Keychain path}"
+                   description="The path of the keychain to use to sign the IPA."
+                   field="keychainPath">
+            <f:textbox name="keychain.keychainPath" value="${keychain.keychainPath}"
+                       default="$${HOME}/Library/Keychains/login.keychain"/>
+          </f:entry>
+          <f:entry title="${%Keychain password}"
+                   description="The password to use to unlock the keychain."
+                   field="keychainPwd">
+            <f:password name="keychain.keychainPassword" value="${keychain.keychainPassword}" />
+          </f:entry>
+          <f:entry title="">
+            <div align="right">
+              <f:repeatableDeleteButton />
+            </div>
+          </f:entry>
+        </table>
+      </f:repeatable>
+    </f:entry>
+
   </f:section>
 </j:jelly>

@@ -132,13 +132,13 @@ public class XCodeBuildOutputParser {
 
     protected void handleLine(String line) throws ParseException, IOException, InterruptedException, JAXBException {
         Matcher m = START_SUITE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
             currentTestSuite = new TestSuite(InetAddress.getLocalHost().getHostName(), m.group(1), dateFormat.parse(m.group(2)));
             return;
         }
 
         m = END_SUITE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
             if(currentTestSuite==null) return; // if there is no current suite, do nothing
 
             currentTestSuite.setEndTime(dateFormat.parse(m.group(2)));
@@ -149,13 +149,13 @@ public class XCodeBuildOutputParser {
         }
 
         m = START_TESTCASE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
             currentTestCase = new TestCase(currentTestSuite.getName(), m.group(1));
             return;
         }
 
         m = END_TESTCASE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
             requireTestSuite();
             requireTestCase(m.group(1));
 
@@ -167,7 +167,7 @@ public class XCodeBuildOutputParser {
         }
 
         m = ERROR_TESTCASE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
 
             String errorLocation = m.group(1);
             String testSuite = m.group(2);
@@ -180,10 +180,10 @@ public class XCodeBuildOutputParser {
             TestFailure failure = new TestFailure(errorMessage, errorLocation);
             currentTestCase.getFailures().add(failure);
             return;
-        } 
-        
+        }
+
         m = FAILED_TESTCASE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
             requireTestSuite();
             requireTestCase(m.group(1));
             currentTestSuite.addTest();
@@ -195,12 +195,12 @@ public class XCodeBuildOutputParser {
         }
 
         m = FAILED_WITH_EXIT_CODE.matcher(line);
-        if(m.matches()) {
+        if(m.find()) {
             exitCode = Integer.valueOf(m.group(1));
             return;
         }
 
-        if(line.matches("BUILD FAILED")) {
+        if(line.contains("BUILD FAILED")) {
             exitCode = -1;
         }
     }

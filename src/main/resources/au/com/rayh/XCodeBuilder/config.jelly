@@ -43,6 +43,11 @@
                 <f:checkbox title="Yes, clean project" />
             </f:entry>
 
+    		<f:entry title="${%Allow failing build results?}" field="allowFailingBuildResults"
+      			description="Checking this option will prevent this build step from failing if xcodebuild exits with a non-zero return code.">
+        		<f:checkbox />
+    		</f:entry>
+
             <f:entry>
                 <f:optionalBlock inline="true" checked="${instance.buildIpa == true}" name="buildIpa" title="${%Pack application and build .ipa?}" description="Checking this option will create a .ipa for each .app found in the build directory.">
                     <f:entry title="${%.ipa filename pattern}" field="ipaName" description="A pattern for the ipa file name. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">
@@ -74,6 +79,15 @@
             
             <f:entry>
                 <f:optionalBlock inline="true" checked="${instance.unlockKeychain == true}" name="unlockKeychain" title="${%Unlock Keychain?}" help="/plugin/xcode/help-unlockKeychain.html">
+				    <f:entry title="${%Keychain}" description="The globally configured keychain to unlock for this build."
+            			 field="globalKeychainName">
+			        	<select class="setting-input" name="keychainName">
+            				<j:forEach var="keychain" items="${descriptor.keychains}">
+			               		<f:option selected="${keychain.keychainName==instance.keychainName}">${keychain.keychainName}</f:option>
+            				</j:forEach>
+			        	</select>
+			    	</f:entry>
+
                     <f:entry title="${%Keychain path}" field="keychainPath"
                           description="The path of the keychain to use to sign the IPA.">
                           <f:textbox default="$${HOME}/Library/Keychains/login.keychain"/>
