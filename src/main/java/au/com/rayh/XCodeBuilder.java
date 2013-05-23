@@ -366,7 +366,7 @@ public class XCodeBuilder extends Builder {
             projectRoot.child("test-reports").deleteRecursive();
 		}
 
-        if (unlockKeychain == null && unlockKeychain) {
+        if (unlockKeychain != null && unlockKeychain) {
             // Get the current keychains and default keychain
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains").stdout(outputStream).pwd(projectRoot).join();
@@ -397,17 +397,19 @@ public class XCodeBuilder extends Builder {
             String keychainPwd = envs.expand(keychain.getKeychainPassword());
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
-            launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
             if (StringUtils.isEmpty(keychainPwd))
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
             else
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
+            
             if (returnCode > 0) {
                 this.restoreKeychains(launcher, listener, projectRoot, envs);
                 
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
             }
+            else
+                launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
         }
 
         // display useful setup information
@@ -652,11 +654,21 @@ public class XCodeBuilder extends Builder {
     };
     
     protected void restoreKeychains(Launcher launcher, BuildListener listener, FilePath projectRoot, EnvVars envs) throws java.io.IOException, java.lang.InterruptedException {
+        if (keychains == null) return;
+        
         ArrayList<String> parameters = new ArrayList<String>() {{
             add("/usr/bin/security");
             add("list-keychains");
             add("-s");
         }};
+
+        for (String s : keychains) {
+            parameters.add(s.substring(1, s.length() - 1));
+        }
+
+        launcher.launch().envs(envs).cmds(parameters).stdout(listener).pwd(projectRoot).join();
+        launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", defaultKeychain.substring(1, defaultKeychain.length() - 1)).stdout(listener).pwd(projectRoot).join();
+    }
 
     public Keychain getKeychain() {
         if(!StringUtils.isEmpty(keychainPath)) {
@@ -669,14 +681,6 @@ public class XCodeBuilder extends Builder {
         }
 
         return null;
-    }
-
-        for (String s : keychains) {
-            parameters.add(s.substring(1, s.length() - 1));
-        }
-
-        launcher.launch().envs(envs).cmds(parameters).stdout(listener).pwd(projectRoot).join();
-        launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", defaultKeychain.substring(1, defaultKeychain.length() - 1)).stdout(listener).pwd(projectRoot).join();
     }
 
     static List<String> splitXcodeBuildArguments(String xcodebuildArguments) {
