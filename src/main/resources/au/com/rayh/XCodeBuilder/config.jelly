@@ -35,7 +35,7 @@
 	]]>
 
 	<!-- General build settings -->
-	<f:section title="General build settings">
+	<f:section title="${%General build settings}">
 	    
 	    <f:entry title="${%Target}" field="target"
 	      description="Leave empty for all targets">
@@ -53,20 +53,23 @@
 		        <f:checkbox title="Yes" />
 		    </f:entry>
 		    
-		    <f:entry title="${%Build IPA?}" field="buildIpa"
-		      description="Checking this option will create a .ipa for each .app found in the build directory.">
-		        <f:checkbox title="Yes" />
-		    </f:entry>
-		    
 		    <f:entry title="${%Configuration}" field="configuration"
 		      description="This is the name of the configuration as defined in the Xcode project.">
 		        <f:textbox default="Release"/>
 		    </f:entry>
+		    
+            <f:entry>
+                <f:optionalBlock inline="true" checked="${instance.buildIpa == true}" name="buildIpa" title="${%Pack application and build .ipa?}" description="Checking this option will create a .ipa for each .app found in the build directory.">
+                    <f:entry title="${%.ipa filename pattern}" field="ipaName" description="A pattern for the ipa file name. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">
+                        <f:textbox />
+                    </f:entry>
+                </f:optionalBlock>
+            </f:entry>
 		</f:advanced>
 	</f:section>
 	
 	<!-- Code signing section -->
-	<f:section title="Code signing &amp; OS X keychain options">
+	<f:section title="${%Code signing &amp; OS X keychain options}">
 		<f:advanced title="Code signing settings">
 		    <f:entry title="${%Code Signing Identity}" field="codeSigningIdentity"
 		      description="Override the code signing identity specified in the project">
@@ -119,7 +122,7 @@
 	</f:section>
 	
 	<!-- Advanced build options -->
-	<f:section title="Advanced Xcode build options">
+	<f:section title="${%Advanced Xcode build options}">
 		<f:advanced title="Advanced build settings">
 		    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
 		      help="/plugin/xcode/help-cleanTestReports.html">
@@ -165,18 +168,25 @@
 		         description="The value to use for CONFIGURATION_BUILD_DIR setting.">
 		           <f:textbox/>
 		    </f:entry>
-		
-		    <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
-		   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
-		   	  <f:textbox />
-		   	</f:entry>
-		
-		    <f:entry title="${%Technical version}" field="cfBundleVersionValue"
-		      description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
-		        <f:textbox />
-		    </f:entry>
+		    
 		</f:advanced>
 
+	</f:section>
+	
+	<f:section title="${%Versioning}">
+	    <f:entry>
+	        <f:optionalBlock inline="true" checked="${instance.provideApplicationVersion == true}" name="provideApplicationVersion" title="${%Provide version number and run avgtool?}" description="Checking this option will run avgtool and update the CFBundleVersion and CFBundleVersionShortString.">
+	      <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
+	            description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
+	            <f:textbox />
+	          </f:entry>
+	
+	      <f:entry title="${%Technical version}" field="cfBundleVersionValue"
+	        description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
+	          <f:textbox />
+	      </f:entry>
+	        </f:optionalBlock>
+	    </f:entry>
 	</f:section>
 
 </j:jelly>

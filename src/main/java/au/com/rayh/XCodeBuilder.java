@@ -38,17 +38,24 @@ import hudson.util.CopyOnWriteList;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import com.dd.plist.*;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
@@ -143,10 +150,18 @@ public class XCodeBuilder extends Builder {
      * @since 1.4
      */
     public final Boolean allowFailingBuildResults;
+    /**
+     * @since 1.4
+     */
+    public final String ipaName;
+    /**
+     * @since 1.4
+     */
+    public final Boolean provideApplicationVersion;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults, String ipaName, Boolean provideApplicationVersion) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -169,6 +184,8 @@ public class XCodeBuilder extends Builder {
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
         this.allowFailingBuildResults = allowFailingBuildResults;
+        this.ipaName = ipaName;
+        this.provideApplicationVersion = provideApplicationVersion;
     }
 
     @Override
@@ -202,6 +219,7 @@ public class XCodeBuilder extends Builder {
         String cfBundleVersionValue = envs.expand(this.cfBundleVersionValue);
         String cfBundleShortVersionStringValue = envs.expand(this.cfBundleShortVersionStringValue);
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
+        String ipaName = envs.expand(this.ipaName);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -517,16 +535,42 @@ public class XCodeBuilder extends Builder {
             }
 
             for (FilePath app : apps) {
-                String version;
-                if (StringUtils.isEmpty(cfBundleShortVersionString) && StringUtils.isEmpty(cfBundleVersion))
-                    version = Integer.toString(build.getNumber());
-                else if (StringUtils.isEmpty(cfBundleVersion))
-                    version = cfBundleShortVersionString;
-                else
-                    version = cfBundleVersion;
+                String version = "";
+                
+                if (! provideApplicationVersion) {
+	                try {
+	                    File file = new File(app.absolutize().child("Info.plist").getRemote());
+	
+	                    NSDictionary rootDict = (NSDictionary)PropertyListParser.parse(file);
+	                    version = rootDict.objectForKey("CFBundleVersion").toString();
+	                } 
+	                catch(Exception ex) {
+	                    listener.getLogger().println("Failed to get version from Info.plist: " + ex.toString());
+	                    return false;
+	                }
+                }
+                else {
+                	if (! StringUtils.isEmpty(cfBundleVersionValue)) {
+                		version = cfBundleVersionValue;
+                	}
+                	else if (! StringUtils.isEmpty(cfBundleShortVersionStringValue)) {
+                		version = cfBundleShortVersionStringValue;
+                	}
+                	else {
+                		listener.getLogger().println("You have to provide a value for either the marketing or technical version. Found neither.");
+                		return false;
+                	}
+                }
+	                
+                File file = new File(app.absolutize().getRemote());
+                String lastModified = new SimpleDateFormat("yyyy.MM.dd").format(new Date(file.lastModified()));
 
-                String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
-                        configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
+                String baseName = app.getBaseName().replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "_" + version) + "_" + lastModified;
+                // If custom .ipa name pattern has been provided, use it and expand version and build date variables
+                if (! StringUtils.isEmpty(ipaName)) {
+                	EnvVars customVars = new EnvVars("VERSION", version, "BUILD_DATE", lastModified);
+                    baseName = customVars.expand(ipaName);
+                }
 
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
