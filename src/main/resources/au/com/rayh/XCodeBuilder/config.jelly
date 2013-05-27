@@ -1,4 +1,3 @@
-
 <!--
   ~ The MIT License
   ~
@@ -22,125 +21,162 @@
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   ~ THE SOFTWARE.
   -->
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:html="jelly:html">
+	<![CDATA[
+		<script type="text/javascript">
+		<!--
+			var showOrHideKeychainAttributeInput = function() {
+				var defaultChosen = (document.getElementById("global-keychain-select").selectedIndex == 0);
+				
+				document.getElementById("custom-keychain-attributes").style.display = defaultChosen ? "block" : "none";
+			};
+		-->
+		</script>
+	]]>
 
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <!--
-    This jelly script is used for per-project configuration.
+	<!-- General build settings -->
+	<f:section title="General build settings">
+	    
+	    <f:entry title="${%Target}" field="target"
+	      description="Leave empty for all targets">
+	        <f:textbox/>
+	    </f:entry>
+	    
+		<f:advanced title="Settings">
+		    <f:entry title="${%Clean before build?}" field="cleanBeforeBuild"
+		      description="This will delete the build directories before invoking the build.">
+		        <f:checkbox title="Yes" />
+		    </f:entry>
+		   
+		    <f:entry title="${%Allow failing build results?}" field="allowFailingBuildResults"
+		      description="Checking this option will prevent this build step from failing if xcodebuild exits with a non-zero return code.">
+		        <f:checkbox title="Yes" />
+		    </f:entry>
+		    
+		    <f:entry title="${%Build IPA?}" field="buildIpa"
+		      description="Checking this option will create a .ipa for each .app found in the build directory.">
+		        <f:checkbox title="Yes" />
+		    </f:entry>
+		    
+		    <f:entry title="${%Configuration}" field="configuration"
+		      description="This is the name of the configuration as defined in the Xcode project.">
+		        <f:textbox default="Release"/>
+		    </f:entry>
+		</f:advanced>
+	</f:section>
+	
+	<!-- Code signing section -->
+	<f:section title="Code signing &amp; OS X keychain options">
+		<f:advanced title="Code signing settings">
+		    <f:entry title="${%Code Signing Identity}" field="codeSigningIdentity"
+		      description="Override the code signing identity specified in the project">
+		        <f:textbox />
+		    </f:entry>
+		
+		    <f:entry title="${%Embedded Profile}" field="embeddedProfileFile"
+		      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile">
+		        <f:textbox />
+		    </f:entry>
+		    
+            <f:entry>
+                <f:optionalBlock inline="true" checked="${instance.unlockKeychain == true}" name="unlockKeychain" title="${%Unlock Keychain?}" help="/plugin/xcode/help-unlockKeychain.html">
+				    <f:entry title="${%Keychain}" description="The globally configured keychain to unlock for this build."
+				             field="globalKeychainName">
+				        <select class="setting-input" name="keychainName" id="global-keychain-select" onchange="showOrHideKeychainAttributeInput()">
+				        	<f:option selected="${instance.keychainName==null}">none (specify one below)</f:option>
+				        	
+				            <j:forEach var="keychain" items="${descriptor.keychains}">
+				            	<j:if test="${keychain.keychainName==instance.keychainName}">
+				            		<j:set var="displayCustomKeychainData" value="none" scope="parent" />
+				            	</j:if>
+				                
+				                <f:option selected="${keychain.keychainName==instance.keychainName}">${keychain.keychainName}</f:option>
+				            </j:forEach>
+				        </select>
+				    </f:entry>
+				    
+				    <f:nested>
+				    	<j:if test="${displayCustomKeychainData==null}">
+				    		<j:set var="displayCustomKeychainData" value="block1" />
+				    	</j:if>
+				    	
+				    	<table id="custom-keychain-attributes" style="display: ${displayCustomKeychainData}">
+						    <f:entry title="${%Keychain path}" field="keychainPath"
+						   	  description="The path of the keychain to use to sign the IPA.">
+						   		<f:textbox />
+						   	</f:entry>
+						
+						    <f:entry title="${%Keychain password}" field="keychainPwd"
+						   	  description="The password to use to unlock the keychain.">
+						   		<f:password />
+						   	</f:entry>
+				    	</table>
+				    </f:nested>
+                </f:optionalBlock>
+            </f:entry>
+		  
+		</f:advanced>
+	</f:section>
+	
+	<!-- Advanced build options -->
+	<f:section title="Advanced Xcode build options">
+		<f:advanced title="Advanced build settings">
+		    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
+		      help="/plugin/xcode/help-cleanTestReports.html">
+		        <f:checkbox title="Yes" name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
+		    </f:entry>
+		
+		    <f:entry title="${%Xcode Schema File}" field="xcodeSchema"
+		      description="Only needed if you want to compile for a specific schema instead of a target.">
+		        <f:textbox />
+		    </f:entry>
+		
+		    <f:entry title="${%SDK}" field="sdk"
+		      description="Leave empty for default SDK">
+		        <f:textbox/>
+		    </f:entry>
+		
+		    <f:entry title="${%SYMROOT}" field="symRoot"
+		      description="Leave empty for default SYMROOT">
+		        <f:textbox/>
+		    </f:entry>
+		
+		    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
+		      help="/plugin/xcode/help-xcodebuildArguments.html">
+		        <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
+		    </f:entry>
+		
+		    <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile"
+		      description="Only needed if you want to compile a workspace instead of a project.">
+		        <f:textbox />
+		    </f:entry>
+		
+		    <f:entry title="${%Xcode Project Directory}" field="xcodeProjectPath"
+		      description="Relative path within the workspace that contains the xcode project file(s).">
+		        <f:textbox />
+		    </f:entry>
+		
+		    <f:entry title="${%Xcode Project File}" field="xcodeProjectFile"
+		      description="Only needed if there is more than one project file in the Xcode Project Directory">
+		        <f:textbox />
+		    </f:entry>
+		
+		    <f:entry title="${%Build output directory}" field="configurationBuildDir"
+		         description="The value to use for CONFIGURATION_BUILD_DIR setting.">
+		           <f:textbox/>
+		    </f:entry>
+		
+		    <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
+		   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
+		   	  <f:textbox />
+		   	</f:entry>
+		
+		    <f:entry title="${%Technical version}" field="cfBundleVersionValue"
+		      description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
+		        <f:textbox />
+		    </f:entry>
+		</f:advanced>
 
-    See global.jelly for a general discussion about jelly script.
-  -->
-    <f:entry title="${%Clean before build?}" field="cleanBeforeBuild"
-      description="This will delete the build directories before invoking the build.">
-        <f:checkbox/>
-    </f:entry>
-
-    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
-      help="/plugin/xcode/help-cleanTestReports.html">
-        <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
-    </f:entry>
-
-    <f:entry title="${%Target}" field="target"
-      description="Leave empty for all targets">
-        <f:textbox/>
-    </f:entry>
-
-    <f:entry title="${%Xcode Schema File}" field="xcodeSchema"
-      description="Only needed if you want to compile for a specific schema instead of a target.">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%SDK}" field="sdk"
-      description="Leave empty for default SDK">
-        <f:textbox/>
-    </f:entry>
-
-    <f:entry title="${%SYMROOT}" field="symRoot"
-      description="Leave empty for default SYMROOT">
-        <f:textbox/>
-    </f:entry>
-
-    <f:entry title="${%Configuration}" field="configuration"
-      description="This is the name of the configuration as defined in the Xcode project.">
-        <f:textbox default="Release"/>
-    </f:entry>
-
-    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
-      help="/plugin/xcode/help-xcodebuildArguments.html">
-        <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
-    </f:entry>
-
-    <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile"
-      description="Only needed if you want to compile a workspace instead of a project.">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Xcode Project Directory}" field="xcodeProjectPath"
-      description="Relative path within the workspace that contains the xcode project file(s).">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Xcode Project File}" field="xcodeProjectFile"
-      description="Only needed if there is more than one project file in the Xcode Project Directory">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Build output directory}" field="configurationBuildDir"
-         description="The value to use for CONFIGURATION_BUILD_DIR setting.">
-           <f:textbox/>
-    </f:entry>
-
-    <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
-   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
-   	  <f:textbox />
-   	</f:entry>
-
-    <f:entry title="${%Technical version}" field="cfBundleVersionValue"
-      description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Build IPA?}" field="buildIpa"
-      description="Checking this option will create a .ipa for each .app found in the build directory.">
-        <f:checkbox />
-    </f:entry>
-
-    <f:entry title="${%Code Signing Identity}" field="codeSigningIdentity"
-      description="Override the code signing identity specified in the project">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Embedded Profile}" field="embeddedProfileFile"
-      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="${%Unlock Keychain?}" field="unlockKeychain"
-      description="Automatically unlock the keychain before signing the archive?">
-        <f:checkbox />
-    </f:entry>
-
-    <f:entry title="${%Keychain}" description="The globally configured keychain to unlock for this build."
-             field="globalKeychainName">
-        <select class="setting-input" name="keychainName">
-            <j:forEach var="keychain" items="${descriptor.keychains}">
-                <f:option selected="${keychain.keychainName==instance.keychainName}">${keychain.keychainName}</f:option>
-            </j:forEach>
-        </select>
-    </f:entry>
-
-    <f:entry title="${%Keychain path}" field="keychainPath"
-   	  description="The path of the keychain to use to sign the IPA.">
-   	  <f:textbox />
-   	</f:entry>
-
-    <f:entry title="${%Keychain password}" field="keychainPwd"
-   	  description="The password to use to unlock the keychain.">
-   	  <f:password />
-   	</f:entry>
-
-    <f:entry title="${%Allow failing build results?}" field="allowFailingBuildResults"
-      description="Checking this option will prevent this build step from failing if xcodebuild exits with a non-zero return code.">
-        <f:checkbox />
-    </f:entry>
+	</f:section>
 
 </j:jelly>
