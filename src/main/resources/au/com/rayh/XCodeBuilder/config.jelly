@@ -141,6 +141,11 @@
 		        <f:textbox/>
 		    </f:entry>
 		
+            <f:entry title="${%Custom xcodebuild executable}" field="customXcodebuildPath"
+              description="Leave empty for global xcodebuild executable path">
+                <f:textbox name="xcode.customXcodebuildPath" value="${instance.customXcodebuildPath}" default=""/>
+            </f:entry>
+
 		    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
 		      help="/plugin/xcode/help-xcodebuildArguments.html">
 		        <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
