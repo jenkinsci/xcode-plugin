@@ -63,6 +63,10 @@
                     <f:entry title="${%.ipa filename pattern}" field="ipaName" description="A pattern for the ipa file name. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">
                         <f:textbox />
                     </f:entry>
+                    
+                    <f:entry title="${%Output directory}" field="ipaOutputDirectory" description="The output directory for the .ipa file, relative to the build directory.">
+                    	<f:textbox />
+                    </f:entry>
                 </f:optionalBlock>
             </f:entry>
 		</f:advanced>

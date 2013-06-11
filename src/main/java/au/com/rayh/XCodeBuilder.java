@@ -157,11 +157,20 @@ public class XCodeBuilder extends Builder {
     /**
      * @since 1.4
      */
+    public final String ipaOutputDirectory;
+    /**
+     * @since 1.4
+     */
     public final Boolean provideApplicationVersion;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults, String ipaName, Boolean provideApplicationVersion) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
+    		String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
+    		String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
+    		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
+    		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
+    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -185,6 +194,7 @@ public class XCodeBuilder extends Builder {
         this.configurationBuildDir = configurationBuildDir;
         this.allowFailingBuildResults = allowFailingBuildResults;
         this.ipaName = ipaName;
+        this.ipaOutputDirectory = ipaOutputDirectory;
         this.provideApplicationVersion = provideApplicationVersion;
     }
 
@@ -220,6 +230,7 @@ public class XCodeBuilder extends Builder {
         String cfBundleShortVersionStringValue = envs.expand(this.cfBundleShortVersionStringValue);
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
         String ipaName = envs.expand(this.ipaName);
+        String ipaOutputDirectory = envs.expand(this.ipaOutputDirectory);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -516,13 +527,28 @@ public class XCodeBuilder extends Builder {
                 listener.fatalError(Messages.XCodeBuilder_NotExistingBuildDirectory(buildDirectory.absolutize().getRemote()));
                 return false;                
             }
+            
             // clean IPA
+            FilePath ipaOutputPath = null;
+            if (ipaOutputDirectory != null && ! StringUtils.isEmpty(ipaOutputDirectory)) {
+            	ipaOutputPath = buildDirectory.child(ipaOutputDirectory);
+            	
+            	// Create if non-existent
+            	if (! ipaOutputPath.exists()) {
+            		ipaOutputPath.mkdirs();
+            	}
+            }
+            
+            if (ipaOutputPath == null) {
+            	ipaOutputPath = buildDirectory;
+            }
+            
             listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
-            for (FilePath path : buildDirectory.list("*.ipa")) {
+            for (FilePath path : ipaOutputPath.list("*.ipa")) {
                 path.delete();
             }
             listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
-            for (FilePath path : buildDirectory.list("*-dSYM.zip")) {
+            for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
                 path.delete();
             }
             // packaging IPA
@@ -572,9 +598,9 @@ public class XCodeBuilder extends Builder {
                     baseName = customVars.expand(ipaName);
                 }
 
-                FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
+                FilePath ipaLocation = ipaOutputPath.child(baseName + ".ipa");
 
-                FilePath payload = buildDirectory.child("Payload");
+                FilePath payload = ipaOutputPath.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
 
@@ -605,7 +631,7 @@ public class XCodeBuilder extends Builder {
                 }
 
                 // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("ditto", "-c", "-k", "--keepParent", "-rsrc", app.absolutize().getRemote() + ".dSYM", baseName + "-dSYM.zip").join();
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("ditto", "-c", "-k", "--keepParent", "-rsrc", app.absolutize().getRemote() + ".dSYM", ipaOutputPath.child(baseName + "-dSYM.zip").absolutize().getRemote()).join();
                 if (returnCode > 0) {
                     listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
                     continue;
