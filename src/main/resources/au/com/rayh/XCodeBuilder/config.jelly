@@ -25,10 +25,10 @@
 	<![CDATA[
 		<script type="text/javascript">
 		<!--
-			var showOrHideKeychainAttributeInput = function() {
-				var defaultChosen = (document.getElementById("global-keychain-select").selectedIndex == 0);
+			var showOrHideKeychainAttributeInput = function(uuid) {
+				var defaultChosen = (document.getElementById("global-keychain-select-" + uuid).selectedIndex == 0);
 				
-				document.getElementById("custom-keychain-attributes").style.display = defaultChosen ? "block" : "none";
+				document.getElementById("" + uuid).style.display = defaultChosen ? "block" : "none";
 			};
 		-->
 		</script>
@@ -78,14 +78,16 @@
 		        <f:textbox />
 		    </f:entry>
 		    
+		    <j:set var="UUID" value="${descriptor.UUID}" />
+		    
             <f:entry>
                 <f:optionalBlock inline="true" checked="${instance.unlockKeychain == true}" name="unlockKeychain" title="${%Unlock Keychain?}" help="/plugin/xcode/help-unlockKeychain.html">
 				    <f:entry title="${%Keychain}" description="The globally configured keychain to unlock for this build."
 				             field="globalKeychainName">
-				        <select class="setting-input" name="keychainName" id="global-keychain-select" onchange="showOrHideKeychainAttributeInput()">
+				        <select class="setting-input" name="keychainName" foo="${UID}" id="global-keychain-select-${UUID}" onchange="showOrHideKeychainAttributeInput('${UUID}')">
 				        	<f:option selected="${instance.keychainName==null}">none (specify one below)</f:option>
 				        	
-				            <j:forEach var="keychain" items="${descriptor.keychains}">
+				            <j:forEach var="keychain" items="${descriptor.globalConfiguration.keychains}">
 				            	<j:if test="${keychain.keychainName==instance.keychainName}">
 				            		<j:set var="displayCustomKeychainData" value="none" scope="parent" />
 				            	</j:if>
@@ -100,7 +102,7 @@
 				    		<j:set var="displayCustomKeychainData" value="block1" />
 				    	</j:if>
 				    	
-				    	<table id="custom-keychain-attributes" style="display: ${displayCustomKeychainData}">
+				    	<table id="${UUID}" style="display: ${displayCustomKeychainData}">
 						    <f:entry title="${%Keychain path}" field="keychainPath"
 						   	  description="The path of the keychain to use to sign the IPA.">
 						   		<f:textbox />

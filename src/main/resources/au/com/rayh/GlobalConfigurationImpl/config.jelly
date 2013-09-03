@@ -53,6 +53,15 @@
                    field="keychainPwd">
             <f:password name="keychain.keychainPassword" value="${keychain.keychainPassword}" />
           </f:entry>
+          <f:entry title="${%Add to keychain search path after build}"
+                   description="The keychain will be added to the keychain search path. This means it shows up in Keychain Access.app"
+                   field="inSearchPath">
+		    <select name="keychain.inSearchPath">
+		    	<f:option selected="${keychain.isInSearchPath()}" value="true">${%Yes}</f:option>
+		    	<f:option selected="${keychain.isInSearchPath() == false}" value="false">${%No}</f:option>
+		    </select>
+<!--             <f:checkbox name="keychain.inSearchPath" title="${%Yes}" checked="${keychain.isInSearchPath()}" default="false" /> -->
+          </f:entry>
           <f:entry title="">
             <div align="right">
               <f:repeatableDeleteButton />
@@ -61,6 +70,14 @@
         </table>
       </f:repeatable>
     </f:entry>
+    
+    <j:if test="${descriptor.keychains.size()>0}">
+        <f:entry title="${%Default keychain}"
+                 description="This will be the system default keychain"
+                 field="defaultKeychain">
+            <f:textbox />
+        </f:entry>
+    </j:if>
 
   </f:section>
 </j:jelly>

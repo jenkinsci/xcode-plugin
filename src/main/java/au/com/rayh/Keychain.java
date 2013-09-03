@@ -6,15 +6,17 @@ public class Keychain {
     private String keychainName;
     private String keychainPath;
     private String keychainPassword;
+    private Boolean inSearchPath;
 
     public Keychain() {
     }
 
     @DataBoundConstructor
-    public Keychain(String keychainName, String keychainPath, String keychainPassword) {
+    public Keychain(String keychainName, String keychainPath, String keychainPassword, Boolean inSearchPath) {
         this.keychainName = keychainName;
         this.keychainPath = keychainPath;
         this.keychainPassword = keychainPassword;
+        this.inSearchPath = inSearchPath;
     }
 
     public String getKeychainName() {
@@ -40,4 +42,13 @@ public class Keychain {
     public void setKeychainPassword(String keychainPassword) {
         this.keychainPassword = keychainPassword;
     }
+
+	public Boolean isInSearchPath() {
+		return inSearchPath;
+	}
+
+	public void setInSearchPath(Boolean inSearchPath) {
+		this.inSearchPath = inSearchPath;
+	}
+
 }

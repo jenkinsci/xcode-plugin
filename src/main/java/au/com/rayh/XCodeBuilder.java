@@ -31,6 +31,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Descriptor;
 import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -45,12 +46,14 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.UUID;
 
 /**
  * @author Ray Hilton
@@ -178,12 +181,12 @@ public class XCodeBuilder extends Builder {
         FilePath projectRoot = build.getWorkspace();
 
         // check that the configured tools exist
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getXcodebuildPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().getXcodebuildPath()));
+        if (!new FilePath(projectRoot.getChannel(), getGlobalConfiguration().getXcodebuildPath()).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getGlobalConfiguration().getXcodebuildPath()));
             return false;
         }
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getAgvtoolPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getDescriptor().getAgvtoolPath()));
+        if (!new FilePath(projectRoot.getChannel(), getGlobalConfiguration().getAgvtoolPath()).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getGlobalConfiguration().getAgvtoolPath()));
             return false;
         }
 
@@ -257,7 +260,7 @@ public class XCodeBuilder extends Builder {
         }
 
         // XCode Version
-        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
+        int returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
         if (returnCode > 0) {
             listener.fatalError(Messages.XCodeBuilder_xcodeVersionNotFound());
             return false; // We fail the build if XCode isn't deployed
@@ -268,7 +271,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleShortVersionString from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         String cfBundleShortVersionString = "";
-        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getAgvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleShortVersionString = output.toString().trim();
@@ -283,7 +286,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleVersion from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
         String cfBundleVersion = "";
-        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getAgvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleVersion = output.toString().trim();
@@ -304,7 +307,7 @@ public class XCodeBuilder extends Builder {
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleShortVersionString = TokenMacro.expandAll(build, listener, cfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
-                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringUpdateError(cfBundleShortVersionString));
                     return false;
@@ -323,7 +326,7 @@ public class XCodeBuilder extends Builder {
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleVersion = TokenMacro.expandAll(build, listener, cfBundleVersionValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
-                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleVersionUpdateError(cfBundleVersion));
                     return false;
@@ -385,9 +388,9 @@ public class XCodeBuilder extends Builder {
         }
 
         listener.getLogger().println(Messages.XCodeBuilder_DebugInfoAvailableSDKs());
-        /*returnCode =*/ launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-showsdks").stdout(listener).pwd(projectRoot).join();
+        /*returnCode =*/ launcher.launch().envs(envs).cmds(getGlobalConfiguration().getXcodebuildPath(), "-showsdks").stdout(listener).pwd(projectRoot).join();
         {
-            List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
+            List<String> commandLine = Lists.newArrayList(getGlobalConfiguration().getXcodebuildPath());
             commandLine.add("-list");
             // xcodebuild -list -workspace $workspace
             listener.getLogger().println(Messages.XCodeBuilder_DebugInfoAvailableSchemes());
@@ -406,7 +409,7 @@ public class XCodeBuilder extends Builder {
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
-        List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
+        List<String> commandLine = Lists.newArrayList(getGlobalConfiguration().getXcodebuildPath());
 
         // Prioritizing schema over target setting
         if (!StringUtils.isEmpty(xcodeSchema)) {
@@ -537,7 +540,7 @@ public class XCodeBuilder extends Builder {
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation.absolutize().getRemote());
                 List<String> packageCommandLine = new ArrayList<String>();
-                packageCommandLine.add(getDescriptor().getXcrunPath());
+                packageCommandLine.add(getGlobalConfiguration().getXcrunPath());
                 packageCommandLine.add("-sdk");
 
                 if (!StringUtils.isEmpty(sdk)) {
@@ -577,10 +580,10 @@ public class XCodeBuilder extends Builder {
 
     public Keychain getKeychain() {
         if(!StringUtils.isEmpty(keychainPath)) {
-            return new Keychain("", keychainPath, keychainPwd);
+            return new Keychain("", keychainPath, keychainPwd, false);
         }
 
-        for (Keychain keychain : getDescriptor().getKeychains()) {
+        for (Keychain keychain : getGlobalConfiguration().getKeychains()) {
             if(keychain.getKeychainName().equals(keychainName))
                 return keychain;
         }
@@ -600,94 +603,38 @@ public class XCodeBuilder extends Builder {
 
         return result;
     }
-
+    
+    public GlobalConfigurationImpl getGlobalConfiguration() {
+    	return getDescriptor().getGlobalConfiguration();
+    }
+    
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
-
+    
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-        private String xcodebuildPath = "/usr/bin/xcodebuild";
-        private String agvtoolPath = "/usr/bin/agvtool";
-        private String xcrunPath = "/usr/bin/xcrun";
-        private final CopyOnWriteList<Keychain> keychains = new CopyOnWriteList<Keychain>();
+    	@Inject
+    	GlobalConfigurationImpl globalConfiguration;
 
-        public DescriptorImpl() {
-            load();
-        }
+		@Override
+		public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+			return true;
+		}
 
-        public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
-            if (StringUtils.isEmpty(value)) {
-                return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
-            } else {
-                // TODO: check that the file exists (and if an agent is used ?)
-            }
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckAgvtoolPath(@QueryParameter String value) throws IOException, ServletException {
-            if (StringUtils.isEmpty(value))
-                return FormValidation.error(Messages.XCodeBuilder_agvtoolPathNotSet());
-            else {
-                // TODO: check that the file exists (and if an agent is used ?)
-            }
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckXcrunPath(@QueryParameter String value) throws IOException, ServletException {
-            if (StringUtils.isEmpty(value))
-                return FormValidation.error(Messages.XCodeBuilder_xcrunPathNotSet());
-            else {
-                // TODO: check that the file exists (and if an agent is used ?)
-            }
-            return FormValidation.ok();
-        }
-
-        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-            // indicates that this builder can be used with all kinds of project types
-            return true;
-        }
-
-        public String getDisplayName() {
-            return Messages.XCodeBuilder_xcode();
-        }
-
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            req.bindJSON(this, formData);
-            keychains.replaceBy(req.bindParametersToList(Keychain.class, "keychain."));
-            save();
-            return super.configure(req, formData);
-        }
-
-        public String getAgvtoolPath() {
-            return agvtoolPath;
-        }
-
-        public String getXcodebuildPath() {
-            return xcodebuildPath;
-        }
-
-        public String getXcrunPath() {
-            return xcrunPath;
-        }
-
-        public void setXcodebuildPath(String xcodebuildPath) {
-            this.xcodebuildPath = xcodebuildPath;
-        }
-
-        public void setAgvtoolPath(String agvtoolPath) {
-            this.agvtoolPath = agvtoolPath;
-        }
-
-        public void setXcrunPath(String xcrunPath) {
-            this.xcrunPath = xcrunPath;
-        }
-
-        public Iterable<Keychain> getKeychains() {
-            return keychains;
-        }
+		@Override
+		public String getDisplayName() {
+			return Messages.XCodeBuilder_xcode();
+		}
+		
+	    public GlobalConfigurationImpl getGlobalConfiguration() {
+	    	return globalConfiguration;
+	    }
+    	
+	    public String getUUID() {
+	    	return "" + UUID.randomUUID().getMostSignificantBits();
+	    }
     }
 }
 
