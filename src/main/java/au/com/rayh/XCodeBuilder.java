@@ -93,6 +93,10 @@ public class XCodeBuilder extends Builder {
      */
     public final String xcodeProjectFile;
     /**
+     * @since 1.4
+     */
+    public final String customXcodebuildPath;
+    /**
      * @since 1.3
      */
     public final String xcodebuildArguments;
@@ -147,7 +151,7 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String customXcodebuildPath, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -157,6 +161,7 @@ public class XCodeBuilder extends Builder {
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
         this.xcodebuildArguments = xcodebuildArguments;
+        this.customXcodebuildPath = customXcodebuildPath;
         this.keychainName = keychainName;
         this.xcodeWorkspaceFile = xcodeWorkspaceFile;
         this.xcodeSchema = xcodeSchema;
@@ -176,10 +181,14 @@ public class XCodeBuilder extends Builder {
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
         FilePath projectRoot = build.getWorkspace();
+        String xcodebuildPath = envs.expand(this.customXcodebuildPath);
+        if (xcodebuildPath == null || xcodebuildPath.isEmpty()) {
+            xcodebuildPath = getDescriptor().getXcodebuildPath();
+        }
 
         // check that the configured tools exist
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getXcodebuildPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().getXcodebuildPath()));
+        if (!new FilePath(projectRoot.getChannel(), xcodebuildPath).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(xcodebuildPath));
             return false;
         }
         if (!new FilePath(projectRoot.getChannel(), getDescriptor().getAgvtoolPath()).exists()) {
@@ -257,7 +266,7 @@ public class XCodeBuilder extends Builder {
         }
 
         // XCode Version
-        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
+        int returnCode = launcher.launch().envs(envs).cmds(xcodebuildPath, "-version").stdout(listener).pwd(projectRoot).join();
         if (returnCode > 0) {
             listener.fatalError(Messages.XCodeBuilder_xcodeVersionNotFound());
             return false; // We fail the build if XCode isn't deployed
@@ -385,9 +394,9 @@ public class XCodeBuilder extends Builder {
         }
 
         listener.getLogger().println(Messages.XCodeBuilder_DebugInfoAvailableSDKs());
-        /*returnCode =*/ launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-showsdks").stdout(listener).pwd(projectRoot).join();
+        /*returnCode =*/ launcher.launch().envs(envs).cmds(xcodebuildPath, "-showsdks").stdout(listener).pwd(projectRoot).join();
         {
-            List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
+            List<String> commandLine = Lists.newArrayList(xcodebuildPath);
             commandLine.add("-list");
             // xcodebuild -list -workspace $workspace
             listener.getLogger().println(Messages.XCodeBuilder_DebugInfoAvailableSchemes());
@@ -406,7 +415,7 @@ public class XCodeBuilder extends Builder {
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
-        List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
+        List<String> commandLine = Lists.newArrayList(xcodebuildPath);
 
         // Prioritizing schema over target setting
         if (!StringUtils.isEmpty(xcodeSchema)) {
