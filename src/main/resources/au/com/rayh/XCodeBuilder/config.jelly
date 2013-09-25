@@ -53,7 +53,7 @@
 		        <f:checkbox title="Yes" />
 		    </f:entry>
 		    <f:entry title="${%Generate Archive?}" field="generateArchive"
-		    description="Checking this option will generate an xcarchive of the specified scheme.">
+		    description="Checking this option will generate an xcarchive of the specified scheme. A workspace and scheme are are also needed for archives">
 		    <f:checkbox titel="Yes" />
 		    </f:entry>
 		    
