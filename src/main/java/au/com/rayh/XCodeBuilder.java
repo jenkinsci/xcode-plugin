@@ -123,6 +123,10 @@ public class XCodeBuilder extends Builder {
     /**
      * @since 1.0
      */
+    public final Boolean generateArchive;
+    /**
+     * @since 1.5
+     **/
     public final Boolean unlockKeychain;
     /**
      * @since 1.4
@@ -147,8 +151,9 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults) {
+    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults) {
         this.buildIpa = buildIpa;
+        this.generateArchive = generateArchive;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
@@ -456,6 +461,13 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", clean: NO");
         }
         commandLine.add("build");
+        
+        if(generateArchive){
+            commandLine.add("archive");
+            xcodeReport.append(", archive:YES");
+        }else{
+            xcodeReport.append(", archive:NO");
+        }
 
         if (!StringUtils.isEmpty(symRootValue)) {
             commandLine.add("SYMROOT=" + symRootValue);
@@ -491,7 +503,7 @@ public class XCodeBuilder extends Builder {
             if (reportGenerator.getExitCode() != 0) return false;
             if (returnCode > 0) return false;
         }
-
+        
         // Package IPA
         if (buildIpa) {
 
