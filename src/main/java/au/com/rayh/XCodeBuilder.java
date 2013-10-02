@@ -390,15 +390,18 @@ public class XCodeBuilder extends Builder {
             String keychainPwd = envs.expand(keychain.getKeychainPassword());
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
-            launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
             if (StringUtils.isEmpty(keychainPwd))
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
             else
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
+            
             if (returnCode > 0) {
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
             }
+            
+            // Show the keychain info after unlocking, if not, OS X will prompt for the keychain password
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
         }
 
         // display useful setup information
