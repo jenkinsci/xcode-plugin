@@ -24,12 +24,7 @@
 
 <div>
     <p>
-        You only need to supply this value if you want to specify the SYMROOT path to use.<br/>
-        If empty, the default SYMROOT path will be used (it could be different depending of your Xcode version).<br/>
-        Supports all macros and also environment and <a href="http://ci.jenkins-ci.org/env-vars.html" target="_blank">build
-        variables</a> from the <a href="https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin" target="_blank">Token
-        Macro Plugin</a>.<br/>
-        For example you can use the value : <br/>
+        You only need to supply this value if you want to specify the buildaction to perform.<br/>
+        Valid values include: build | analyze | archive | test | installsrc | install | clean . More info <a href="https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/xcodebuild.1.html" target="_blank">here</a>
     </p>
-    <pre>${WORKSPACE}/symroot</pre>
 </div>
