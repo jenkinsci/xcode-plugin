@@ -159,6 +159,10 @@ public class XCodeBuilder extends Builder {
      * @since 1.4
      */
     public final Boolean provideApplicationVersion;
+    /**
+     * @since 1.4.11
+     */
+    public final String buildAction;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -167,7 +171,7 @@ public class XCodeBuilder extends Builder {
     		String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
-    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory) {
+    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, String buildAction) {
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
         this.sdk = sdk;
@@ -194,6 +198,7 @@ public class XCodeBuilder extends Builder {
         this.ipaName = ipaName;
         this.ipaOutputDirectory = ipaOutputDirectory;
         this.provideApplicationVersion = provideApplicationVersion;
+        this.buildAction = buildAction;
     }
 
     @Override
@@ -229,6 +234,7 @@ public class XCodeBuilder extends Builder {
         String codeSigningIdentity = envs.expand(this.codeSigningIdentity);
         String ipaName = envs.expand(this.ipaName);
         String ipaOutputDirectory = envs.expand(this.ipaOutputDirectory);
+        String buildAction = envs.expand(this.buildAction);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -484,7 +490,14 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", clean: NO");
         }
-        commandLine.add("build");
+
+        //commandLine.add("build");
+        //sample buildActions include build | test
+        if( buildAction == null || buildAction.trim().equals("") ){
+            commandLine.add("build");
+        }else {
+            commandLine.add(buildAction);
+        }
         
         if(generateArchive != null && generateArchive){
             commandLine.add("archive");

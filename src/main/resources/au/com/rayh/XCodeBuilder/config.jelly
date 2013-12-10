@@ -143,6 +143,11 @@
 		      description="Only needed if you want to compile for a specific schema instead of a target.">
 		        <f:textbox />
 		    </f:entry>
+
+		    <f:entry title="BuildAction" field="buildAction"
+                description="Leave empty for default buildAction = build">
+              <f:textbox/>
+            </f:entry>
 		
 		    <f:entry title="${%SDK}" field="sdk"
 		      description="Leave empty for default SDK">
