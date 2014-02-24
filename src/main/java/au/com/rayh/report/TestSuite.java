@@ -24,19 +24,15 @@
 
 package au.com.rayh.report;
 
+import javax.xml.bind.annotation.*;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 @XmlRootElement(name="testsuite")
 @XmlAccessorType(XmlAccessType.NONE)
-public class TestSuite {
+public class TestSuite implements Serializable {
     @XmlAttribute
     int failures;
     
