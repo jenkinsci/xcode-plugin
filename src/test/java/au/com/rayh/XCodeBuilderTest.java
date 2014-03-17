@@ -28,9 +28,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
-import java.util.Date;
-
 import static org.junit.Assert.*;
 import static java.util.Arrays.asList;
 
@@ -48,28 +45,28 @@ public class XCodeBuilderTest {
     @Test
     public void shouldSplitXcodeBuildArgumentsWithoutEscapedSpaces() throws Exception {
         assertEquals(asList("GCC_SYMBOLS_PRIVATE_EXTERN=NO"),
-            XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO"));
         assertEquals(asList("GCC_SYMBOLS_PRIVATE_EXTERN=NO", "COPY_PHASE_STRIP=NO"),
-            XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO COPY_PHASE_STRIP=NO"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO COPY_PHASE_STRIP=NO"));
     }
 
     @Test
     public void shouldSplitXcodeBuildArgumentsWithEscapedSpaces() throws Exception {
         assertEquals(asList("CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
-            XCodeBuilder.splitXcodeBuildArguments("CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
         assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
         assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution", "C=D"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution\" C=D"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution\" C=D"));
     }
     @Test
     public void shouldUnquoteWhenSplittingXcodeBuildArgumentsWithIncompleteDoubleQuote() throws Exception {
         assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution"));
     }
     @Test
     public void shouldUnquoteWhenSplittingXcodeBuildArgumentsWithIncompleteSingleQuote() throws Exception {
         assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY='iPhone"));
+            AbstractXCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY='iPhone"));
     }
 }
