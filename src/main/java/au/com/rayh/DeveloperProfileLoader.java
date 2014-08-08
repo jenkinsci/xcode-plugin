@@ -78,6 +78,12 @@ public class DeveloperProfileLoader extends Builder {
         args.add(keyChain);
         invoke(launcher, listener, args, "Failed to unlock keychain");
 
+        // This sets the timeout for the developer profile to unlimited time.
+        args = new ArgumentListBuilder("security", "set-keychain-settings");
+        args.add(keyChain);
+        invoke(launcher, listener, args, "Failed to set keychain settings.");
+
+
         final FilePath secret = getSecretDir(build, keychainPass);
         secret.unzipFrom(new ByteArrayInputStream(dp.getImage()));
 
