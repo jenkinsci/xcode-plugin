@@ -53,8 +53,16 @@
 		        <f:checkbox title="Yes" />
 		    </f:entry>
 		    <f:entry title="${%Generate Archive?}" field="generateArchive"
-		    description="Checking this option will generate an xcarchive of the specified scheme. A workspace and scheme are are also needed for archives">
+		    description="Checking this option will generate an xcarchive of the specified scheme. A workspace and scheme are are also needed for archives.">
 		    <f:checkbox title="Yes" />
+		    </f:entry>
+		    <f:entry title="${%No Console Log?}" field="noConsoleLog"
+		    description="Checking this option will not log xcode build output to console output.">
+		    <f:checkbox title="Yes" />
+		    </f:entry>
+		    <f:entry title="${%Logfile Output directory}" field="logfileOutputDirectory"
+		      description="Leave empty for no seperate Logfile. The output directory for the separate logfile, relative to the build directory.">
+		        <f:textbox/>
 		    </f:entry>
 		    
 		    <f:entry title="${%Configuration}" field="configuration"

@@ -128,6 +128,14 @@ public class XCodeBuilder extends Builder {
      */
     public final Boolean generateArchive;
     /**
+     * @since 1.4.4
+     */
+    public final Boolean noConsoleLog;
+    /**
+     * @since 1.4.4
+     */
+    public final String logfileOutputDirectory;
+    /**
      * @since 1.5
      **/
     public final Boolean unlockKeychain;
@@ -183,15 +191,18 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
-    		String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
-    		String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
-    		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
-    		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
-    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID, 
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl) {
+    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean noConsoleLog, String logfileOutputDirectory, Boolean cleanBeforeBuild, 
+            Boolean cleanTestReports, String configuration,
+            String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
+            String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
+            String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
+            String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
+            String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID, 
+            String bundleIDInfoPlistPath, String ipaManifestPlistUrl) {
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
+        this.noConsoleLog = noConsoleLog;
+        this.logfileOutputDirectory = logfileOutputDirectory;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
@@ -353,13 +364,13 @@ public class XCodeBuilder extends Builder {
 
         // Update the bundle ID
         if (this.changeBundleID != null && this.changeBundleID) {
-        	listener.getLogger().println(Messages.XCodeBuilder_CFBundleIdentifierChanged(bundleIDInfoPlistPath, bundleID));
-        	returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c",  "Set :CFBundleIdentifier " + bundleID, bundleIDInfoPlistPath).stdout(listener).pwd(projectRoot).join();
-        	
-        	if (returnCode > 0) {
-        		listener.fatalError(Messages.XCodeBuilder_CFBundleIdentifierInfoPlistNotFound(bundleIDInfoPlistPath));
-        		return false;
-        	}
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleIdentifierChanged(bundleIDInfoPlistPath, bundleID));
+            returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c",  "Set :CFBundleIdentifier " + bundleID, bundleIDInfoPlistPath).stdout(listener).pwd(projectRoot).join();
+            
+            if (returnCode > 0) {
+                listener.fatalError(Messages.XCodeBuilder_CFBundleIdentifierInfoPlistNotFound(bundleIDInfoPlistPath));
+                return false;
+            }
         }
 
         // Update the Marketing version (CFBundleShortVersionString)
@@ -413,7 +424,7 @@ public class XCodeBuilder extends Builder {
         if (cleanTestReports != null && cleanTestReports) {
             listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports").absolutize().getRemote()));
             projectRoot.child("test-reports").deleteRecursive();
-		}
+        }
 
         if (unlockKeychain != null && unlockKeychain) {
             // Let's unlock the keychain
@@ -473,251 +484,270 @@ public class XCodeBuilder extends Builder {
 
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
-        XCodeBuildOutputParser reportGenerator = new JenkinsXCodeBuildOutputParser(projectRoot, listener);
+        JenkinsXCodeBuildOutputParser reportGenerator = new JenkinsXCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getGlobalConfiguration().getXcodebuildPath());
 
-        // Prioritizing schema over target setting
-        if (!StringUtils.isEmpty(xcodeSchema)) {
-            commandLine.add("-scheme");
-            commandLine.add(xcodeSchema);
-            xcodeReport.append(", scheme: ").append(xcodeSchema);
-        } else if (StringUtils.isEmpty(target)) {
-            commandLine.add("-alltargets");
-            xcodeReport.append("target: ALL");
-        } else {
-            commandLine.add("-target");
-            commandLine.add(target);
-            xcodeReport.append("target: ").append(target);
-        }
-
-        if (!StringUtils.isEmpty(sdk)) {
-            commandLine.add("-sdk");
-            commandLine.add(sdk);
-            xcodeReport.append(", sdk: ").append(sdk);
-        } else {
-            xcodeReport.append(", sdk: DEFAULT");
-        }
-
-        // Prioritizing workspace over project setting
-        if (!StringUtils.isEmpty(xcodeWorkspaceFile)) {
-            commandLine.add("-workspace");
-            commandLine.add(xcodeWorkspaceFile + ".xcworkspace");
-            xcodeReport.append(", workspace: ").append(xcodeWorkspaceFile);
-        } else if (!StringUtils.isEmpty(xcodeProjectFile)) {
-            commandLine.add("-project");
-            commandLine.add(xcodeProjectFile);
-            xcodeReport.append(", project: ").append(xcodeProjectFile);
-        } else {
-            xcodeReport.append(", project: DEFAULT");
-        }
-
-		if (!StringUtils.isEmpty(configuration)) {
-			commandLine.add("-configuration");
-			commandLine.add(configuration);
-			xcodeReport.append(", configuration: ").append(configuration);
-		}
-
-        if (cleanBeforeBuild) {
-            commandLine.add("clean");
-            xcodeReport.append(", clean: YES");
-        } else {
-            xcodeReport.append(", clean: NO");
-        }
-        commandLine.add("build");
-        
-        if(generateArchive != null && generateArchive){
-            commandLine.add("archive");
-            xcodeReport.append(", archive:YES");
-        }else{
-            xcodeReport.append(", archive:NO");
-        }
-
-        if (!StringUtils.isEmpty(symRootValue)) {
-            commandLine.add("SYMROOT=" + symRootValue);
-            xcodeReport.append(", symRoot: ").append(symRootValue);
-        } else {
-            xcodeReport.append(", symRoot: DEFAULT");
-        }
-
-        // CONFIGURATION_BUILD_DIR
-        if (!StringUtils.isEmpty(configurationBuildDirValue)) {
-            commandLine.add("CONFIGURATION_BUILD_DIR=" + configurationBuildDirValue);
-            xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
-        } else {
-            xcodeReport.append(", configurationBuildDir: DEFAULT");
-        }
-
-        // handle code signing identities
-        if (!StringUtils.isEmpty(codeSigningIdentity)) {
-            commandLine.add("CODE_SIGN_IDENTITY=" + codeSigningIdentity);
-            xcodeReport.append(", codeSignIdentity: ").append(codeSigningIdentity);
-        } else {
-            xcodeReport.append(", codeSignIdentity: DEFAULT");
-        }
-
-        // Additional (custom) xcodebuild arguments
-        if (!StringUtils.isEmpty(xcodebuildArguments)) {
-            commandLine.addAll(splitXcodeBuildArguments(xcodebuildArguments));
-        }
-
-        listener.getLogger().println(xcodeReport.toString());
-        returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
-        if (allowFailingBuildResults != null && allowFailingBuildResults.booleanValue() == false) {
-            if (reportGenerator.getExitCode() != 0) return false;
-            if (returnCode > 0) return false;
-        }
-        
-        // Package IPA
-        if (buildIpa) {
-
-            if (!buildDirectory.exists() || !buildDirectory.isDirectory()) {
-                listener.fatalError(Messages.XCodeBuilder_NotExistingBuildDirectory(buildDirectory.absolutize().getRemote()));
-                return false;                
+        try {
+            // Prioritizing schema over target setting
+            if (!StringUtils.isEmpty(xcodeSchema)) {
+                commandLine.add("-scheme");
+                commandLine.add(xcodeSchema);
+                xcodeReport.append(", scheme: ").append(xcodeSchema);
+            } else if (StringUtils.isEmpty(target)) {
+                commandLine.add("-alltargets");
+                xcodeReport.append("target: ALL");
+            } else {
+                commandLine.add("-target");
+                commandLine.add(target);
+                xcodeReport.append("target: ").append(target);
+            }
+    
+            if (!StringUtils.isEmpty(sdk)) {
+                commandLine.add("-sdk");
+                commandLine.add(sdk);
+                xcodeReport.append(", sdk: ").append(sdk);
+            } else {
+                xcodeReport.append(", sdk: DEFAULT");
+            }
+    
+            // Prioritizing workspace over project setting
+            if (!StringUtils.isEmpty(xcodeWorkspaceFile)) {
+                commandLine.add("-workspace");
+                commandLine.add(xcodeWorkspaceFile + ".xcworkspace");
+                xcodeReport.append(", workspace: ").append(xcodeWorkspaceFile);
+            } else if (!StringUtils.isEmpty(xcodeProjectFile)) {
+                commandLine.add("-project");
+                commandLine.add(xcodeProjectFile);
+                xcodeReport.append(", project: ").append(xcodeProjectFile);
+            } else {
+                xcodeReport.append(", project: DEFAULT");
+            }
+    
+            if (!StringUtils.isEmpty(configuration)) {
+                commandLine.add("-configuration");
+                commandLine.add(configuration);
+                xcodeReport.append(", configuration: ").append(configuration);
+            }
+    
+            if (cleanBeforeBuild) {
+                commandLine.add("clean");
+                xcodeReport.append(", clean: YES");
+            } else {
+                xcodeReport.append(", clean: NO");
+            }
+            commandLine.add("build");
+            
+            if(generateArchive != null && generateArchive){
+                commandLine.add("archive");
+                xcodeReport.append(", archive:YES");
+            }else{
+                xcodeReport.append(", archive:NO");
             }
             
-            // clean IPA
-            FilePath ipaOutputPath = null;
-            if (ipaOutputDirectory != null && ! StringUtils.isEmpty(ipaOutputDirectory)) {
-            	ipaOutputPath = buildDirectory.child(ipaOutputDirectory);
-            	
-            	// Create if non-existent
-            	if (! ipaOutputPath.exists()) {
-            		ipaOutputPath.mkdirs();
-            	}
+            if(noConsoleLog != null && noConsoleLog){
+                xcodeReport.append(", consolelog:NO");
+                reportGenerator.setConsoleLog(false);
+            }else{
+                xcodeReport.append(", consolelog:YES");
+            }
+            if(!StringUtils.isEmpty(logfileOutputDirectory)) {
+                xcodeReport.append(", logfileOutputDirectory: ").append(logfileOutputDirectory);
+                reportGenerator.setLogfilePath(buildDirectory,logfileOutputDirectory);
+            }
+    
+            if (!StringUtils.isEmpty(symRootValue)) {
+                commandLine.add("SYMROOT=" + symRootValue);
+                xcodeReport.append(", symRoot: ").append(symRootValue);
+            } else {
+                xcodeReport.append(", symRoot: DEFAULT");
+            }
+    
+            // CONFIGURATION_BUILD_DIR
+            if (!StringUtils.isEmpty(configurationBuildDirValue)) {
+                commandLine.add("CONFIGURATION_BUILD_DIR=" + configurationBuildDirValue);
+                xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
+            } else {
+                xcodeReport.append(", configurationBuildDir: DEFAULT");
+            }
+    
+            // handle code signing identities
+            if (!StringUtils.isEmpty(codeSigningIdentity)) {
+                commandLine.add("CODE_SIGN_IDENTITY=" + codeSigningIdentity);
+                xcodeReport.append(", codeSignIdentity: ").append(codeSigningIdentity);
+            } else {
+                xcodeReport.append(", codeSignIdentity: DEFAULT");
+            }
+    
+            // Additional (custom) xcodebuild arguments
+            if (!StringUtils.isEmpty(xcodebuildArguments)) {
+                commandLine.addAll(splitXcodeBuildArguments(xcodebuildArguments));
+            }
+    
+            listener.getLogger().println(xcodeReport.toString());
+            returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
+            if (allowFailingBuildResults != null && allowFailingBuildResults.booleanValue() == false) {
+                if (reportGenerator.getExitCode() != 0) return false;
+                if (returnCode > 0) return false;
             }
             
-            if (ipaOutputPath == null) {
-            	ipaOutputPath = buildDirectory;
-            }
-            
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
-            for (FilePath path : ipaOutputPath.list("*.ipa")) {
-                path.delete();
-            }
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
-            for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
-                path.delete();
-            }
-            // packaging IPA
-            listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
-            List<FilePath> apps = buildDirectory.list(new AppFileFilter());
-            // FilePath is based on File.listFiles() which can randomly fail | http://stackoverflow.com/questions/3228147/retrieving-the-underlying-error-when-file-listfiles-return-null
-            if (apps == null) {
-                listener.fatalError(Messages.XCodeBuilder_NoAppsInBuildDirectory(buildDirectory.absolutize().getRemote()));
-                return false;                
-            }
-
-            for (FilePath app : apps) {
-                String version = "";
-                String shortVersion = "";
+            // Package IPA
+            if (buildIpa) {
+    
+                if (!buildDirectory.exists() || !buildDirectory.isDirectory()) {
+                    listener.fatalError(Messages.XCodeBuilder_NotExistingBuildDirectory(buildDirectory.absolutize().getRemote()));
+                    return false;                
+                }
                 
-                try {
-                    output.reset();
-                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c",  "Print :CFBundleVersion", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
-                    if (returnCode == 0) {
-                        version = output.toString().trim();
-                    }
-
-                    output.reset();
-                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleShortVersionString", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
-                    if (returnCode == 0) {
-                        shortVersion = output.toString().trim();
+                // clean IPA
+                FilePath ipaOutputPath = null;
+                if (ipaOutputDirectory != null && ! StringUtils.isEmpty(ipaOutputDirectory)) {
+                    ipaOutputPath = buildDirectory.child(ipaOutputDirectory);
+                    
+                    // Create if non-existent
+                    if (! ipaOutputPath.exists()) {
+                        ipaOutputPath.mkdirs();
                     }
                 }
-                catch(Exception ex) {
-                    listener.getLogger().println("Failed to get version from Info.plist: " + ex.toString());
-                    return false;
+                
+                if (ipaOutputPath == null) {
+                    ipaOutputPath = buildDirectory;
                 }
-
-               	if (StringUtils.isEmpty(version) && StringUtils.isEmpty(shortVersion)) {
-               		listener.getLogger().println("You have to provide a value for either the marketing or technical version. Found neither.");
-               		return false;
-               	}
-
-                File file = new File(app.absolutize().getRemote());
-                String lastModified = new SimpleDateFormat("yyyy.MM.dd").format(new Date(file.lastModified()));
-
-                String baseName = app.getBaseName().replaceAll(" ", "_") + (shortVersion.isEmpty() ? "" : "-" + shortVersion) + (version.isEmpty() ? "" : "-" + version);
-                // If custom .ipa name pattern has been provided, use it and expand version and build date variables
-                if (! StringUtils.isEmpty(ipaName)) {
-                	EnvVars customVars = new EnvVars(
-                		"BASE_NAME", app.getBaseName().replaceAll(" ", "_"),
-                		"VERSION", version,
-                		"SHORT_VERSION", shortVersion,
-                		"BUILD_DATE", lastModified
-                	);
-                    baseName = customVars.expand(ipaName);
+                
+                listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+                for (FilePath path : ipaOutputPath.list("*.ipa")) {
+                    path.delete();
                 }
-
-                String ipaFileName = baseName + ".ipa";
-                FilePath ipaLocation = ipaOutputPath.child(ipaFileName);
-
-                FilePath payload = ipaOutputPath.child("Payload");
-                payload.deleteRecursive();
-                payload.mkdirs();
-
-                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation.absolutize().getRemote());
-                List<String> packageCommandLine = new ArrayList<String>();
-                packageCommandLine.add(getGlobalConfiguration().getXcrunPath());
-                packageCommandLine.add("-sdk");
-
-                if (!StringUtils.isEmpty(sdk)) {
-                    packageCommandLine.add(sdk);
-                } else {
-                    packageCommandLine.add(buildPlatform);
+                listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
+                for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
+                    path.delete();
                 }
-                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.absolutize().getRemote(), "-o", ipaLocation.absolutize().getRemote()));
-                if (!StringUtils.isEmpty(embeddedProfileFile)) {
-                    packageCommandLine.add("--embed");
-                    packageCommandLine.add(embeddedProfileFile);
+                // packaging IPA
+                listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
+                List<FilePath> apps = buildDirectory.list(new AppFileFilter());
+                // FilePath is based on File.listFiles() which can randomly fail | http://stackoverflow.com/questions/3228147/retrieving-the-underlying-error-when-file-listfiles-return-null
+                if (apps == null) {
+                    listener.fatalError(Messages.XCodeBuilder_NoAppsInBuildDirectory(buildDirectory.absolutize().getRemote()));
+                    return false;                
                 }
-                if (!StringUtils.isEmpty(codeSigningIdentity)) {                   
-                    packageCommandLine.add("--sign");
-                    packageCommandLine.add(codeSigningIdentity);
-                }
-
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
-                if (returnCode > 0) {
-                    listener.getLogger().println("Failed to build " + ipaLocation.absolutize().getRemote());
-                    continue;
-                }
-
-                // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("ditto", "-c", "-k", "--keepParent", "-rsrc", app.absolutize().getRemote() + ".dSYM", ipaOutputPath.child(baseName + "-dSYM.zip").absolutize().getRemote()).join();
-                if (returnCode > 0) {
-                    listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
-                    continue;
-                }
-
-                if(!StringUtils.isEmpty(ipaManifestPlistUrl)) {
-                    FilePath ipaManifestLocation = ipaOutputPath.child(baseName + ".plist");
-                    listener.getLogger().println("Creating Manifest Plist => " + ipaManifestLocation.absolutize().getRemote());
-
-                    String displayName = "";
-                    String bundleId = "";
-
-                    output.reset();
-                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleIdentifier", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
-                    if (returnCode == 0) {
-                        bundleId = output.toString().trim();
+    
+                for (FilePath app : apps) {
+                    String version = "";
+                    String shortVersion = "";
+                    
+                    try {
+                        output.reset();
+                        returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c",  "Print :CFBundleVersion", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
+                        if (returnCode == 0) {
+                            version = output.toString().trim();
+                        }
+    
+                        output.reset();
+                        returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleShortVersionString", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
+                        if (returnCode == 0) {
+                            shortVersion = output.toString().trim();
+                        }
                     }
-                    output.reset();
-                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleDisplayName", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
-                    if (returnCode == 0) {
-                        displayName = output.toString().trim();
+                    catch(Exception ex) {
+                        listener.getLogger().println("Failed to get version from Info.plist: " + ex.toString());
+                        return false;
                     }
-
-
-                    String manifest = MANIFEST_PLIST_TEMPLATE
-                                        .replace("${IPA_URL_BASE}", this.ipaManifestPlistUrl)
-                                        .replace("${IPA_NAME}", ipaFileName)
-                                        .replace("${BUNDLE_ID}", bundleId)
-                                        .replace("${BUNDLE_VERSION}", shortVersion)
-                                        .replace("${APP_NAME}", displayName);
-
-                    ipaManifestLocation.write(manifest, "UTF-8");
+    
+                       if (StringUtils.isEmpty(version) && StringUtils.isEmpty(shortVersion)) {
+                           listener.getLogger().println("You have to provide a value for either the marketing or technical version. Found neither.");
+                           return false;
+                       }
+    
+                    File file = new File(app.absolutize().getRemote());
+                    String lastModified = new SimpleDateFormat("yyyy.MM.dd").format(new Date(file.lastModified()));
+    
+                    String baseName = app.getBaseName().replaceAll(" ", "_") + (shortVersion.isEmpty() ? "" : "-" + shortVersion) + (version.isEmpty() ? "" : "-" + version);
+                    // If custom .ipa name pattern has been provided, use it and expand version and build date variables
+                    if (! StringUtils.isEmpty(ipaName)) {
+                        EnvVars customVars = new EnvVars(
+                            "BASE_NAME", app.getBaseName().replaceAll(" ", "_"),
+                            "VERSION", version,
+                            "SHORT_VERSION", shortVersion,
+                            "BUILD_DATE", lastModified
+                        );
+                        baseName = customVars.expand(ipaName);
+                    }
+    
+                    String ipaFileName = baseName + ".ipa";
+                    FilePath ipaLocation = ipaOutputPath.child(ipaFileName);
+    
+                    FilePath payload = ipaOutputPath.child("Payload");
+                    payload.deleteRecursive();
+                    payload.mkdirs();
+    
+                    listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation.absolutize().getRemote());
+                    List<String> packageCommandLine = new ArrayList<String>();
+                    packageCommandLine.add(getGlobalConfiguration().getXcrunPath());
+                    packageCommandLine.add("-sdk");
+    
+                    if (!StringUtils.isEmpty(sdk)) {
+                        packageCommandLine.add(sdk);
+                    } else {
+                        packageCommandLine.add(buildPlatform);
+                    }
+                    packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.absolutize().getRemote(), "-o", ipaLocation.absolutize().getRemote()));
+                    if (!StringUtils.isEmpty(embeddedProfileFile)) {
+                        packageCommandLine.add("--embed");
+                        packageCommandLine.add(embeddedProfileFile);
+                    }
+                    if (!StringUtils.isEmpty(codeSigningIdentity)) {                   
+                        packageCommandLine.add("--sign");
+                        packageCommandLine.add(codeSigningIdentity);
+                    }
+    
+                    returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
+                    if (returnCode > 0) {
+                        listener.getLogger().println("Failed to build " + ipaLocation.absolutize().getRemote());
+                        continue;
+                    }
+    
+                    // also zip up the symbols, if present
+                    returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("ditto", "-c", "-k", "--keepParent", "-rsrc", app.absolutize().getRemote() + ".dSYM", ipaOutputPath.child(baseName + "-dSYM.zip").absolutize().getRemote()).join();
+                    if (returnCode > 0) {
+                        listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
+                        continue;
+                    }
+    
+                    if(!StringUtils.isEmpty(ipaManifestPlistUrl)) {
+                        FilePath ipaManifestLocation = ipaOutputPath.child(baseName + ".plist");
+                        listener.getLogger().println("Creating Manifest Plist => " + ipaManifestLocation.absolutize().getRemote());
+    
+                        String displayName = "";
+                        String bundleId = "";
+    
+                        output.reset();
+                        returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleIdentifier", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
+                        if (returnCode == 0) {
+                            bundleId = output.toString().trim();
+                        }
+                        output.reset();
+                        returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleDisplayName", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
+                        if (returnCode == 0) {
+                            displayName = output.toString().trim();
+                        }
+    
+    
+                        String manifest = MANIFEST_PLIST_TEMPLATE
+                                            .replace("${IPA_URL_BASE}", this.ipaManifestPlistUrl)
+                                            .replace("${IPA_NAME}", ipaFileName)
+                                            .replace("${BUNDLE_ID}", bundleId)
+                                            .replace("${BUNDLE_VERSION}", shortVersion)
+                                            .replace("${APP_NAME}", displayName);
+    
+                        ipaManifestLocation.write(manifest, "UTF-8");
+                    }
+                    payload.deleteRecursive();
                 }
-                payload.deleteRecursive();
+            }
+        }
+        finally {
+            // close Logfile
+            if(reportGenerator != null) {
+                reportGenerator.closeLogfile();
             }
         }
 
@@ -753,7 +783,7 @@ public class XCodeBuilder extends Builder {
     }
     
     public GlobalConfigurationImpl getGlobalConfiguration() {
-    	return getDescriptor().getGlobalConfiguration();
+        return getDescriptor().getGlobalConfiguration();
     }
     
     @Override
@@ -763,7 +793,7 @@ public class XCodeBuilder extends Builder {
     
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-    	GlobalConfigurationImpl globalConfiguration;
+        GlobalConfigurationImpl globalConfiguration;
 
         // backward compatibility
         @Deprecated
@@ -810,17 +840,17 @@ public class XCodeBuilder extends Builder {
         }
 
         @Override
-		public String getDisplayName() {
-			return Messages.XCodeBuilder_xcode();
-		}
-		
-	    public GlobalConfigurationImpl getGlobalConfiguration() {
-	    	return globalConfiguration;
-	    }
-    	
-	    public String getUUID() {
-	    	return "" + UUID.randomUUID().getMostSignificantBits();
-	    }
+        public String getDisplayName() {
+            return Messages.XCodeBuilder_xcode();
+        }
+        
+        public GlobalConfigurationImpl getGlobalConfiguration() {
+            return globalConfiguration;
+        }
+        
+        public String getUUID() {
+            return "" + UUID.randomUUID().getMostSignificantBits();
+        }
     }
 }
 
