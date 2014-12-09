@@ -679,14 +679,14 @@ public class XCodeBuilder extends Builder {
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
                 if (returnCode > 0) {
                     listener.getLogger().println("Failed to build " + ipaLocation.absolutize().getRemote());
-                    continue;
+                    return false;
                 }
 
                 // also zip up the symbols, if present
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("ditto", "-c", "-k", "--keepParent", "-rsrc", app.absolutize().getRemote() + ".dSYM", ipaOutputPath.child(baseName + "-dSYM.zip").absolutize().getRemote()).join();
                 if (returnCode > 0) {
                     listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
-                    continue;
+                    return false;
                 }
 
                 if(!StringUtils.isEmpty(ipaManifestPlistUrl)) {
