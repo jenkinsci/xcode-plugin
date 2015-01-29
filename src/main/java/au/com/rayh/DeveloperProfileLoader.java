@@ -92,9 +92,18 @@ public class DeveloperProfileLoader extends Builder {
             listener.getLogger().write(output.toByteArray());
         }
 
-        // copy provisioning profiles
         VirtualChannel ch = build.getBuiltOn().getChannel();
         FilePath home = ch.call(new GetHomeDirectory());    // TODO: switch to FilePath.getHomeDirectory(ch) when we can
+
+        // As of 10.9.0 it appears 'security create-keychain' doesn't add the new keychain to
+        // the keychain search list (i.e. not visible in keychain access). This manually adds
+        // the new chain to the search list while keeping the login chain on the list.
+        args = new ArgumentListBuilder("security","list-keychains");
+        args.add("-d", "user");
+        args.add("-s", home.toString()+"/Library/Keychains/login.keychain", home.toString()+"/Library/Keychains/"+keyChain);
+        invoke(launcher, listener, args, "Failed to add keychain to keychain search list");
+
+        // copy provisioning profiles
         FilePath profiles = home.child("Library/MobileDevice/Provisioning Profiles");
         profiles.mkdirs();
 
