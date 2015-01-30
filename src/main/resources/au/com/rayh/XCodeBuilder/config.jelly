@@ -179,6 +179,11 @@
 		        <f:textbox/>
 		    </f:entry>
 		
+		    <f:entry title="${%Custom xcodebuild buildaction}" field="xcodebuildBuildAction"
+		    	description="Custom xcodebuild buildaction. Use test for running unit tests.">
+		        <f:textbox name="xcode.xcodebuildBuildaction" value="${instance.xcodebuildBuildaction}" default="build"/>
+		    </f:entry>
+		
 		    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
 		    	description="Additional xcodebuild arguments">
 		        <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
