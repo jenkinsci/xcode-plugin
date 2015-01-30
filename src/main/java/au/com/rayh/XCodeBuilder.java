@@ -103,6 +103,10 @@ public class XCodeBuilder extends Builder {
      */
     public final String xcodebuildArguments;
     /**
+     * @since 1.5
+     */
+    public final String xcodebuildBuildaction;
+    /**
      * @since 1.2
      */
     public final String xcodeSchema;
@@ -188,7 +192,7 @@ public class XCodeBuilder extends Builder {
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
-    		String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
+    		String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String xcodebuildBuildaction,
     		String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
@@ -204,6 +208,7 @@ public class XCodeBuilder extends Builder {
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
         this.xcodebuildArguments = xcodebuildArguments;
+        this.xcodebuildBuildaction = xcodebuildBuildaction;
         this.keychainName = keychainName;
         this.xcodeWorkspaceFile = xcodeWorkspaceFile;
         this.xcodeSchema = xcodeSchema;
@@ -263,6 +268,7 @@ public class XCodeBuilder extends Builder {
         String xcodeProjectPath = envs.expand(this.xcodeProjectPath);
         String xcodeProjectFile = envs.expand(this.xcodeProjectFile);
         String xcodebuildArguments = envs.expand(this.xcodebuildArguments);
+        String xcodebuildBuildaction = envs.expand(this.xcodebuildBuildaction);
         String xcodeSchema = envs.expand(this.xcodeSchema);
         String xcodeWorkspaceFile = envs.expand(this.xcodeWorkspaceFile);
         String embeddedProfileFile = envs.expand(this.embeddedProfileFile);
@@ -565,7 +571,12 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", clean: NO");
         }
-        commandLine.add("build");
+        // Custom xcodebuild buildaction
+        if (!StringUtils.isEmpty(xcodebuildBuildaction)) {
+            commandLine.add(xcodebuildBuildaction);
+        } else {
+            commandLine.add("build");
+        }
         
         if(generateArchive != null && generateArchive){
             commandLine.add("archive");
