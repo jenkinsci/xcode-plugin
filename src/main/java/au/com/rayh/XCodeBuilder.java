@@ -276,6 +276,7 @@ public class XCodeBuilder extends Builder {
         String ipaOutputDirectory = envs.expand(this.ipaOutputDirectory);
         String bundleID = envs.expand(this.bundleID);
         String bundleIDInfoPlistPath = envs.expand(this.bundleIDInfoPlistPath);
+        String ipaManifestPlistUrl = envs.expand(this.ipaManifestPlistUrl);
         // End expanding all string variables in parameters  
 
         // Set the working directory
