@@ -45,6 +45,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.inject.Inject;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.text.SimpleDateFormat;
@@ -134,6 +135,14 @@ public class XCodeBuilder extends Builder {
      */
     public final Boolean generateArchive;
     /**
+     * @since 1.4.4
+     */
+    public final Boolean noConsoleLog;
+    /**
+     * @since 1.4.4
+     */
+    public final String logfileOutputDirectory;
+    /**
      * @since 1.5
      **/
     public final Boolean unlockKeychain;
@@ -190,7 +199,8 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
+    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean noConsoleLog, String logfileOutputDirectory, Boolean cleanBeforeBuild, 
+            Boolean cleanTestReports, String configuration,
     		String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
     		String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
@@ -199,6 +209,8 @@ public class XCodeBuilder extends Builder {
     		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx) {
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
+        this.noConsoleLog = noConsoleLog;
+        this.logfileOutputDirectory = logfileOutputDirectory;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
@@ -501,7 +513,7 @@ public class XCodeBuilder extends Builder {
 
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
-        XCodeBuildOutputParser reportGenerator = new JenkinsXCodeBuildOutputParser(projectRoot, listener);
+        JenkinsXCodeBuildOutputParser reportGenerator = new JenkinsXCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getGlobalConfiguration().getXcodebuildPath());
 
         // Prioritizing schema over target setting
@@ -578,6 +590,17 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", archive:NO");
         }
 
+        if(noConsoleLog != null && noConsoleLog){
+            xcodeReport.append(", consolelog:NO");
+            reportGenerator.setConsoleLog(false);
+        }else{
+            xcodeReport.append(", consolelog:YES");
+        }
+        if(!StringUtils.isEmpty(logfileOutputDirectory)) {
+            xcodeReport.append(", logfileOutputDirectory: ").append(logfileOutputDirectory);
+            reportGenerator.setLogfilePath(buildDirectory,logfileOutputDirectory);
+        }
+    
         if (!StringUtils.isEmpty(symRootValue)) {
             commandLine.add("SYMROOT=" + symRootValue);
             xcodeReport.append(", symRoot: ").append(symRootValue);

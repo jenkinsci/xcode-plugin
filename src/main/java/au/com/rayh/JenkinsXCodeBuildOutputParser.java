@@ -31,9 +31,15 @@ package au.com.rayh;
 
 import hudson.FilePath;
 import hudson.model.TaskListener;
+
+import java.io.BufferedOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -42,14 +48,46 @@ import java.io.OutputStream;
 public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
     protected TaskListener buildListener;
     private FilePath testReportsDir;
+    private OutputStream logFileOutputStream;
 
 	public JenkinsXCodeBuildOutputParser(FilePath workspace, TaskListener buildListener) throws IOException, InterruptedException {
 		super();
         this.buildListener = buildListener;
         this.captureOutputStream = new LineBasedFilterOutputStream();
+        this.consoleLog = true;
+        this.logFileOutputStream = null;
 
         testReportsDir = workspace.child("test-reports");
         testReportsDir.mkdirs();
+    }
+
+    public void setConsoleLog(boolean consoleLog) {
+        this.consoleLog = consoleLog;
+    }
+    
+    public void setLogfilePath(final FilePath buildDirectory, final String logfileOutputDirectory) throws IOException, InterruptedException {
+        if(buildDirectory.exists() && buildDirectory.isDirectory() && !StringUtils.isEmpty(logfileOutputDirectory)) {
+            final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd_hhmmssSSS");
+            final String logfileName = dateFormatter.format(new GregorianCalendar().getTime());
+            FilePath logFilePath = buildDirectory.child(logfileOutputDirectory);
+            // clean Directory
+            if(logFilePath.exists()) {
+                logFilePath.deleteRecursive();
+            }
+            // Create if non-existent
+            if (!logFilePath.exists()) {
+                logFilePath.mkdirs();
+            }
+            logFileOutputStream = new BufferedOutputStream(logFilePath.child(logfileName + ".log").write(),1024*512);
+        }
+    }
+    
+    public void closeLogfile() throws IOException {
+    	if(logFileOutputStream != null) {
+            logFileOutputStream.flush();
+            logFileOutputStream.close();
+            logFileOutputStream = null;
+        }
     }
 
     public class LineBasedFilterOutputStream extends FilterOutputStream {
@@ -61,7 +99,6 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
 
         @Override
         public void write(int b) throws IOException {
-            super.write(b);
             if((char)b == '\n') {
                 try {
                     handleLine(buffer.toString());
@@ -73,6 +110,22 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
             } else {
                 buffer.append((char)b);
             }
+            if(consoleLog) {
+                super.write(b);
+            }
+            if(logFileOutputStream != null) {
+                logFileOutputStream.write(b);
+            }
+        }
+        
+        @Override
+        public void close() throws IOException {
+            if(logFileOutputStream != null) {
+                logFileOutputStream.flush();
+                logFileOutputStream.close();
+                logFileOutputStream = null;
+            }
+            super.close();
         }
     }
 
