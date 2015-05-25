@@ -63,7 +63,9 @@ public class XCodeBuilder extends Builder {
     private static final int SIGTERM = 143;
 
     private static final String MANIFEST_PLIST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
-            + "<plist version=\"1.0\"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${IPA_URL_BASE}/${IPA_NAME}</string></dict></array>"
+            + "<plist version=\"1.0\"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${IPA_URL_BASE}/${IPA_NAME}</string></dict>"
+            + "<dict><key>kind</key><string>display-image</string><key>needs-shine</key><${DISPLAY_IMAGE_NEEDS_SHINE}/><key>url</key><string>${DISPLAY_IMAGE_URL}</string></dict>"
+            + "<dict><key>kind</key><string>full-size-image</string><key>needs-shine</key><${FULL_SIZE_IMAGE_NEEDS_SHINE}/><key>url</key><string>${FULL_SIZE_IMAGE_URL}</string></dict></array>"
             + "<key>metadata</key><dict><key>bundle-identifier</key><string>${BUNDLE_ID}</string><key>bundle-version</key><string>${BUNDLE_VERSION}</string><key>kind</key><string>software</string><key>title</key><string>${APP_NAME}</string></dict></dict></array></dict></plist>";
     /**
      * @since 1.0
@@ -187,7 +189,23 @@ public class XCodeBuilder extends Builder {
      * @since 1.5
      */
     public final String ipaManifestPlistUrl;
-
+    /**
+     * @since 1.5
+     */
+    public final String displayImageUrl;
+    /**
+     * @since 1.5
+     */
+    public final Boolean displayImageNeedsShine;
+    /**
+     * @since 1.5
+     */
+    public final String fullSizeImageUrl;
+    /**
+     * @since 1.5
+     */
+    public final Boolean fullSizeImageNeedsShine;
+    
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
@@ -196,7 +214,8 @@ public class XCodeBuilder extends Builder {
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
     		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID, 
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx) {
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, String displayImageUrl, Boolean displayImageNeedsShine,
+            String fullSizeImageUrl, Boolean fullSizeImageNeedsShine, Boolean interpretTargetAsRegEx) {
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
         this.sdk = sdk;
@@ -228,6 +247,10 @@ public class XCodeBuilder extends Builder {
         this.bundleIDInfoPlistPath = bundleIDInfoPlistPath;
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
+        this.displayImageUrl = displayImageUrl;
+        this.displayImageNeedsShine = displayImageNeedsShine;
+        this.fullSizeImageUrl = fullSizeImageUrl;
+        this.fullSizeImageNeedsShine = fullSizeImageNeedsShine;
     }
 
     @SuppressWarnings("unused")
@@ -759,13 +782,16 @@ public class XCodeBuilder extends Builder {
                         displayName = output.toString().trim();
                     }
 
-
                     String manifest = MANIFEST_PLIST_TEMPLATE
                                         .replace("${IPA_URL_BASE}", this.ipaManifestPlistUrl)
                                         .replace("${IPA_NAME}", ipaFileName)
                                         .replace("${BUNDLE_ID}", bundleId)
                                         .replace("${BUNDLE_VERSION}", shortVersion)
-                                        .replace("${APP_NAME}", displayName);
+                                        .replace("${APP_NAME}", displayName)
+                                        .replace("${DISPLAY_IMAGE_URL}", this.displayImageUrl)
+                                        .replace("${DISPLAY_IMAGE_NEEDS_SHINE}", Boolean.toString(this.displayImageNeedsShine))
+                                        .replace("${FULL_SIZE_IMAGE_URL}", this.fullSizeImageUrl)
+                                        .replace("${FULL_SIZE_IMAGE_NEEDS_SHINE}", Boolean.toString(this.fullSizeImageNeedsShine));
 
                     ipaManifestLocation.write(manifest, "UTF-8");
                 }
