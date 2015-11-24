@@ -47,6 +47,8 @@
         </f:entry>
 
 		<f:advanced title="Settings">
+
+
 		    <f:entry title="${%Clean before build?}" field="cleanBeforeBuild"
 		      description="This will delete the build directories before invoking the build.">
 		        <f:checkbox title="Yes" />
@@ -83,6 +85,17 @@
             </f:entry>
 		</f:advanced>
 	</f:section>
+	<f:section title="${%Test execution options}">
+		<f:advanced title="Test execution settings">
+			<f:entry title="${%Execute Tests}" field="executeTests" description="Checking this option will execute the unit tests.">
+        		<f:checkbox title="Yes" />
+       		</f:entry>
+        	<f:entry title="${%Skip Build}" field="skipBuild" description="Checking this option will skip the build process.">
+        		<f:checkbox title="Yes" />
+       		</f:entry>
+       	</f:advanced>
+	</f:section>
+	
 	
 	<!-- Code signing section -->
 	<f:section title="${%Code signing &amp; OS X keychain options}">

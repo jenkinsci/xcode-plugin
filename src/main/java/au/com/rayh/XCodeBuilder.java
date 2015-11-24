@@ -187,6 +187,9 @@ public class XCodeBuilder extends Builder {
      * @since 1.5
      */
     public final String ipaManifestPlistUrl;
+    
+    public final Boolean executeTests;
+    public final Boolean skipBuild;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -196,7 +199,7 @@ public class XCodeBuilder extends Builder {
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
     		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID, 
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx) {
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, Boolean executeTests, Boolean skipBuild) {
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
         this.sdk = sdk;
@@ -228,6 +231,8 @@ public class XCodeBuilder extends Builder {
         this.bundleIDInfoPlistPath = bundleIDInfoPlistPath;
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
+        this.executeTests = executeTests;
+        this.skipBuild = skipBuild;
     }
 
     @SuppressWarnings("unused")
@@ -569,7 +574,12 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", clean: NO");
         }
-        commandLine.add("build");
+        if(executeTests){
+        	commandLine.add("test");
+        }
+        if(!skipBuild){
+            commandLine.add("build");
+        }
         
         if(generateArchive != null && generateArchive){
             commandLine.add("archive");
