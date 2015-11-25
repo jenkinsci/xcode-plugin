@@ -8,6 +8,7 @@ import hudson.util.IOUtils;
 import hudson.util.Secret;
 import jenkins.security.ConfidentialKey;
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.CheckForNull;
@@ -61,7 +62,7 @@ public class DeveloperProfile extends BaseCredentials {
         this.description = description;
         this.password= password;
 
-        if (image!=null) {
+        if (image != null && !StringUtils.isBlank(image.getName())) {
             // for added secrecy, store this in the confidential store
             new ConfidentialKeyImpl(id).store(image);
         }
