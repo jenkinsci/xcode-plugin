@@ -276,6 +276,7 @@ public class XCodeBuilder extends Builder {
         String ipaOutputDirectory = envs.expand(this.ipaOutputDirectory);
         String bundleID = envs.expand(this.bundleID);
         String bundleIDInfoPlistPath = envs.expand(this.bundleIDInfoPlistPath);
+        String ipaManifestPlistUrl = envs.expand(this.ipaManifestPlistUrl);
         // End expanding all string variables in parameters  
 
         // Set the working directory
@@ -761,7 +762,7 @@ public class XCodeBuilder extends Builder {
 
 
                     String manifest = MANIFEST_PLIST_TEMPLATE
-                                        .replace("${IPA_URL_BASE}", this.ipaManifestPlistUrl)
+                                        .replace("${IPA_URL_BASE}", ipaManifestPlistUrl)
                                         .replace("${IPA_NAME}", ipaFileName)
                                         .replace("${BUNDLE_ID}", bundleId)
                                         .replace("${BUNDLE_VERSION}", shortVersion)
