@@ -53,6 +53,11 @@
                    field="keychainPwd">
             <f:password name="keychain.keychainPassword" value="${keychain.keychainPassword}" />
           </f:entry>
+          <f:entry title="${%Keychain timeout}"
+                   description="The timeout in seconds to unlock the keychain."
+                   field="keychainTimeout">
+            <f:textbox name="keychain.keychainTimeout" value="${keychain.keychainTimeout}" />
+          </f:entry>
           <f:entry title="${%Add to keychain search path after build}"
                    description="The keychain will be added to the keychain search path. This means it shows up in Keychain Access.app"
                    field="inSearchPath">
@@ -70,7 +75,7 @@
         </table>
       </f:repeatable>
     </f:entry>
-    
+
     <j:if test="${descriptor.keychains.size()>0}">
         <f:entry title="${%Default keychain}"
                  description="This will be the system default keychain"

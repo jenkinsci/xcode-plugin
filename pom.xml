@@ -32,7 +32,7 @@
     <relativePath />
   </parent>
   <artifactId>xcode-plugin</artifactId>
-  <version>1.4.10-SNAPSHOT</version>
+  <version>1.5.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Xcode integration</name>
   <description>This plugin adds the ability to call Xcode command line tools to automate build and packaging iOS applications (iPhone, iPad, ...).</description>
@@ -93,11 +93,11 @@
   </dependencies>
   <build>
     <plugins>
-     <plugin> 
-        <groupId>org.jenkins-ci.tools</groupId> 
-      	<artifactId>maven-hpi-plugin</artifactId> 
-      	<version>1.95</version> 
-      </plugin> 
+     <plugin>
+        <groupId>org.jenkins-ci.tools</groupId>
+      	<artifactId>maven-hpi-plugin</artifactId>
+      	<version>1.95</version>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
