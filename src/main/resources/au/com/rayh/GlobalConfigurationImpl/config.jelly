@@ -33,6 +33,9 @@
     <f:entry title="${%xcrun executable path}" field="xcrunPath">
       <f:textbox default="/usr/bin/xcrun"/>
     </f:entry>
+    <f:entry title="${%Sign IPA at build time}" field="signIpaOnXcrun">
+        <f:checkbox default="true" title="${%Yes}" />
+    </f:entry>
 
     <f:entry title="${%Keychains}" description="Saved keychain configurations">
       <f:repeatable var="keychain" items="${descriptor.keychains}">

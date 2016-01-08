@@ -173,7 +173,7 @@ public class XCodeBuilder extends Builder {
      * @since 1.4
      */
     public final Boolean changeBundleID;
-    /** 
+    /**
      * @since 1.4
      */
     public final String bundleID;
@@ -188,6 +188,14 @@ public class XCodeBuilder extends Builder {
      */
     public final String ipaManifestPlistUrl;
 
+    /**
+     * This is a work around for the broken Apple script as documented here:
+     http://stackoverflow.com/questions/32504355/error-itms-90339-this-bundle-is-invalid-the-info-plist-contains-an-invalid-ke
+     http://stackoverflow.com/questions/32763288/ios-builds-ipa-creation-no-longer-works-from-the-command-line/32845990#32845990
+     http://cutting.io/posts/packaging-ios-apps-from-the-command-line/
+     */
+    public final Boolean signIpaOnXcrun;
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
@@ -195,8 +203,9 @@ public class XCodeBuilder extends Builder {
     		String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
-    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID, 
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx) {
+    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, Boolean signIpaOnXcrun) {
+
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
         this.sdk = sdk;
@@ -228,12 +237,13 @@ public class XCodeBuilder extends Builder {
         this.bundleIDInfoPlistPath = bundleIDInfoPlistPath;
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
+        this.signIpaOnXcrun = signIpaOnXcrun;
     }
 
     @SuppressWarnings("unused")
     private Object readResolve() throws ObjectStreamException {
         if (provideApplicationVersion == null) {
-            if (!StringUtils.isEmpty(cfBundleVersionValue) 
+            if (!StringUtils.isEmpty(cfBundleVersionValue)
                 || !StringUtils.isEmpty(cfBundleShortVersionStringValue)) {
                 provideApplicationVersion = true;
             }
@@ -276,7 +286,7 @@ public class XCodeBuilder extends Builder {
         String ipaOutputDirectory = envs.expand(this.ipaOutputDirectory);
         String bundleID = envs.expand(this.bundleID);
         String bundleIDInfoPlistPath = envs.expand(this.bundleIDInfoPlistPath);
-        // End expanding all string variables in parameters  
+        // End expanding all string variables in parameters
 
         // Set the working directory
         if (!StringUtils.isEmpty(xcodeProjectPath)) {
@@ -365,7 +375,7 @@ public class XCodeBuilder extends Builder {
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleVersion));
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
-        
+
         String buildDescription = cfBundleShortVersionString + " (" + cfBundleVersion + ")";
         XCodeAction a = new XCodeAction(buildDescription);
         build.addAction(a);
@@ -374,7 +384,7 @@ public class XCodeBuilder extends Builder {
         if (this.changeBundleID != null && this.changeBundleID) {
         	listener.getLogger().println(Messages.XCodeBuilder_CFBundleIdentifierChanged(bundleIDInfoPlistPath, bundleID));
         	returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c",  "Set :CFBundleIdentifier " + bundleID, bundleIDInfoPlistPath).stdout(listener).pwd(projectRoot).join();
-        	
+
         	if (returnCode > 0) {
         		listener.fatalError(Messages.XCodeBuilder_CFBundleIdentifierInfoPlistNotFound(bundleIDInfoPlistPath));
         		return false;
@@ -450,12 +460,12 @@ public class XCodeBuilder extends Builder {
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
             else
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
-            
+
             if (returnCode > 0) {
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
             }
-            
+
             // Show the keychain info after unlocking, if not, OS X will prompt for the keychain password
             launcher.launch().envs(envs).cmds("/usr/bin/security", "show-keychain-info", keychainPath).stdout(listener).pwd(projectRoot).join();
         }
@@ -570,7 +580,7 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", clean: NO");
         }
         commandLine.add("build");
-        
+
         if(generateArchive != null && generateArchive){
             commandLine.add("archive");
             xcodeReport.append(", archive:YES");
@@ -612,30 +622,30 @@ public class XCodeBuilder extends Builder {
             if (reportGenerator.getExitCode() != 0) return false;
             if (returnCode > 0) return false;
         }
-        
+
         // Package IPA
         if (buildIpa) {
 
             if (!buildDirectory.exists() || !buildDirectory.isDirectory()) {
                 listener.fatalError(Messages.XCodeBuilder_NotExistingBuildDirectory(buildDirectory.absolutize().getRemote()));
-                return false;                
+                return false;
             }
-            
+
             // clean IPA
             FilePath ipaOutputPath = null;
             if (ipaOutputDirectory != null && ! StringUtils.isEmpty(ipaOutputDirectory)) {
             	ipaOutputPath = buildDirectory.child(ipaOutputDirectory);
-            	
+
             	// Create if non-existent
             	if (! ipaOutputPath.exists()) {
             		ipaOutputPath.mkdirs();
             	}
             }
-            
+
             if (ipaOutputPath == null) {
             	ipaOutputPath = buildDirectory;
             }
-            
+
             listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
             for (FilePath path : ipaOutputPath.list("*.ipa")) {
                 path.delete();
@@ -650,13 +660,13 @@ public class XCodeBuilder extends Builder {
             // FilePath is based on File.listFiles() which can randomly fail | http://stackoverflow.com/questions/3228147/retrieving-the-underlying-error-when-file-listfiles-return-null
             if (apps == null) {
                 listener.fatalError(Messages.XCodeBuilder_NoAppsInBuildDirectory(buildDirectory.absolutize().getRemote()));
-                return false;                
+                return false;
             }
 
             for (FilePath app : apps) {
                 String version = "";
                 String shortVersion = "";
-                
+
                 try {
                     output.reset();
                     returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c",  "Print :CFBundleVersion", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
@@ -720,7 +730,7 @@ public class XCodeBuilder extends Builder {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
                 }
-                if (!StringUtils.isEmpty(codeSigningIdentity)) {                   
+                if (!StringUtils.isEmpty(codeSigningIdentity) && signIpaOnXcrun) {
                     packageCommandLine.add("--sign");
                     packageCommandLine.add(codeSigningIdentity);
                 }
@@ -783,7 +793,7 @@ public class XCodeBuilder extends Builder {
                     return keychain;
             }
         }
-        
+
         if(!StringUtils.isEmpty(keychainPath)) {
             return new Keychain("", keychainPath, keychainPwd, false);
         }
@@ -798,21 +808,21 @@ public class XCodeBuilder extends Builder {
 
         final QuotedStringTokenizer tok = new QuotedStringTokenizer(xcodebuildArguments);
         final List<String> result = new ArrayList<String>();
-        while(tok.hasMoreTokens()) 
+        while(tok.hasMoreTokens())
             result.add(tok.nextToken());
 
         return result;
     }
-    
+
     public GlobalConfigurationImpl getGlobalConfiguration() {
     	return getDescriptor().getGlobalConfiguration();
     }
-    
+
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
-    
+
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
     	GlobalConfigurationImpl globalConfiguration;
@@ -865,14 +875,13 @@ public class XCodeBuilder extends Builder {
 		public String getDisplayName() {
 			return Messages.XCodeBuilder_xcode();
 		}
-		
+
 	    public GlobalConfigurationImpl getGlobalConfiguration() {
 	    	return globalConfiguration;
 	    }
-    	
+
 	    public String getUUID() {
 	    	return "" + UUID.randomUUID().getMostSignificantBits();
 	    }
     }
 }
-
