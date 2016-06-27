@@ -569,14 +569,18 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", clean: NO");
         }
-        commandLine.add("build");
-        
+
+        //Bug JENKINS-30362
+        //Generating an archive builds the project twice
+        //commandLine.add("build");
         if(generateArchive != null && generateArchive){
             commandLine.add("archive");
             xcodeReport.append(", archive:YES");
         }else{
             xcodeReport.append(", archive:NO");
+            commandLine.add("build");
         }
+        //END Bug JENKINS-30362
 
         if (!StringUtils.isEmpty(symRootValue)) {
             commandLine.add("SYMROOT=" + symRootValue);
