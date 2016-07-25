@@ -43,19 +43,11 @@ public class DeveloperProfile extends BaseStandardCredentials {
      */
     private Secret password;
 
-    /**
-     * Random generated unique ID that identifies this developer profile among others.
-     */
-    private final String id;
-
-    private final String description;
 
     @DataBoundConstructor
     public DeveloperProfile(@CheckForNull CredentialsScope scope, @CheckForNull String id, @CheckForNull String description,
             Secret password, FileItem image) throws IOException {
         super(scope, id, description);
-        this.id = id;
-        this.description = description;
         this.password= password;
 
         if (image!=null) {
@@ -64,12 +56,9 @@ public class DeveloperProfile extends BaseStandardCredentials {
         }
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getDescription() {
-        return description;
+    @Deprecated
+    public DeveloperProfile(String id, String description, Secret password, FileItem image) throws IOException {
+        this(CredentialsScope.GLOBAL,id,description,password,image);
     }
 
     public Secret getPassword() {
@@ -80,7 +69,7 @@ public class DeveloperProfile extends BaseStandardCredentials {
      * Retrieves the PKCS12 byte image.
      */
     public byte[] getImage() throws IOException {
-        return new ConfidentialKeyImpl(id).load();
+        return new ConfidentialKeyImpl(getId()).load();
     }
 
     /**
