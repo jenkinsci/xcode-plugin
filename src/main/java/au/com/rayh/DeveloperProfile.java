@@ -1,37 +1,35 @@
 package au.com.rayh;
 
-import com.cloudbees.plugins.credentials.BaseCredentials;
-import com.cloudbees.plugins.credentials.CredentialsDescriptor;
-import com.cloudbees.plugins.credentials.CredentialsScope;
 import hudson.Extension;
 import hudson.util.IOUtils;
 import hudson.util.Secret;
-import jenkins.security.ConfidentialKey;
-import org.apache.commons.fileupload.FileItem;
-import org.kohsuke.stapler.DataBoundConstructor;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.security.auth.x500.X500Principal;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+
+import jenkins.security.ConfidentialKey;
+
+import org.apache.commons.fileupload.FileItem;
+import org.kohsuke.stapler.DataBoundConstructor;
+
+import com.cloudbees.plugins.credentials.CredentialsDescriptor;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 
 /**
  * Apple developer profile, which consists of any number of PKCS12 of the private key
@@ -39,7 +37,7 @@ import java.util.zip.ZipInputStream;
  *
  * @author Kohsuke Kawaguchi
  */
-public class DeveloperProfile extends BaseCredentials {
+public class DeveloperProfile extends BaseStandardCredentials {
     /**
      * Password of the PKCS12 files inside the profile.
      */
@@ -53,10 +51,9 @@ public class DeveloperProfile extends BaseCredentials {
     private final String description;
 
     @DataBoundConstructor
-    public DeveloperProfile(String id, String description, Secret password, FileItem image) throws IOException {
-        super(CredentialsScope.GLOBAL);
-        if (id==null)
-            id = UUID.randomUUID().toString();
+    public DeveloperProfile(@CheckForNull CredentialsScope scope, @CheckForNull String id, @CheckForNull String description,
+            Secret password, FileItem image) throws IOException {
+        super(scope, id, description);
         this.id = id;
         this.description = description;
         this.password= password;
