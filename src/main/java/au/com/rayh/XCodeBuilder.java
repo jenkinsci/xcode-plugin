@@ -569,12 +569,12 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", clean: NO");
         }
-        commandLine.add("build");
         
         if(generateArchive != null && generateArchive){
             commandLine.add("archive");
             xcodeReport.append(", archive:YES");
         }else{
+            commandLine.add("build");
             xcodeReport.append(", archive:NO");
         }
 
