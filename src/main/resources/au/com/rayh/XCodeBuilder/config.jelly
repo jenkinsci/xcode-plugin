@@ -79,6 +79,22 @@
                     <f:entry title="${%Manifest Plist URL}" field="ipaManifestPlistUrl" description="The base URL to use to create a Manifest Plist. If omitted no Manifest Plist will be generated">
                         <f:textbox />
                     </f:entry>
+
+                    <f:entry title="${%Small Image URL}" field="displayImageUrl" description="A fully-qualified URL pointing to a .png icon used during download and installation.">
+                        <f:textbox />
+                    </f:entry>
+
+                    <f:entry title="${%Small Image needs shine?}" field="displayImageNeedsShine" description="Check if small image needs shine effect applied.">
+                        <f:checkbox title="Yes" />
+                    </f:entry>
+
+                    <f:entry title="${%Large Image URL}" field="fullSizeImageUrl" description="A fully-qualified URL pointing to a .png image that represents the iTunes app.">
+                        <f:textbox />
+                    </f:entry>
+
+                    <f:entry title="${%Large Image needs shine?}" field="fullSizeImageNeedsShine" description="Check if large image needs shine effect applied.">
+                        <f:checkbox title="Yes" />
+                    </f:entry>
                 </f:optionalBlock>
             </f:entry>
 		</f:advanced>
