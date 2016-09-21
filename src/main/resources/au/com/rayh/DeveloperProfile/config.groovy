@@ -4,13 +4,7 @@ import java.security.GeneralSecurityException
 import java.security.cert.CertificateException
 
 f = namespace(lib.FormTagLib)
-
-f.entry(title:_("Description"), field:"description") {
-    if (instance!=null)
-        raw("<input type=hidden name=id value=${instance.id}>");
-    f.textbox()
-}
-
+st = namespace("jelly:stapler")
 
 def fileForm() {
     f.entry(title:_("*.developerprofile  File"), field:"image") {
@@ -55,8 +49,4 @@ if (img ==null) {
     }
 }
 
-/*
-f.entry() {
-    iframe(src:"${rootURL}/descriptor/${DeveloperProfile.class.name}/upload?id=TODO")
-}
-*/
+st.include(page: "id-and-description", class: descriptor.clazz)
