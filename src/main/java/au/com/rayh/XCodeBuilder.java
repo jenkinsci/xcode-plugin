@@ -34,10 +34,13 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.CopyOnWriteList;
 import hudson.util.QuotedStringTokenizer;
+import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
 import org.jenkinsci.plugins.tokenmacro.TokenMacro;
@@ -58,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Ray Hilton
  */
-public class XCodeBuilder extends Builder {
+public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
     private static final int SIGTERM = 143;
 
@@ -252,9 +255,16 @@ public class XCodeBuilder extends Builder {
     }
 
     @Override
+    public void perform(Run<?, ?> build, FilePath filePath, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
+		_perform(build, filePath, launcher, build.getEnvironment(listener), listener);
+    }
+
+    @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        EnvVars envs = build.getEnvironment(listener);
-        FilePath projectRoot = build.getWorkspace();
+		return _perform(build, build.getWorkspace(), launcher, build.getEnvironment(listener), listener);
+	}
+
+    private boolean _perform(Run<?,?> build, FilePath projectRoot, Launcher launcher, EnvVars envs, TaskListener listener) throws InterruptedException, IOException {
 
         // check that the configured tools exist
         if (!new FilePath(projectRoot.getChannel(), getGlobalConfiguration().getXcodebuildPath()).exists()) {
@@ -311,7 +321,7 @@ public class XCodeBuilder extends Builder {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+                symRootValue = TokenMacro.expandAll(build, projectRoot, listener, symRoot).trim();
             } catch (MacroEvaluationException e) {
                 listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
                 return false;
@@ -322,7 +332,7 @@ public class XCodeBuilder extends Builder {
         FilePath buildDirectory;
         if (!StringUtils.isEmpty(configurationBuildDir)) {
             try {
-                configurationBuildDirValue = TokenMacro.expandAll(build, listener, configurationBuildDir).trim();
+                configurationBuildDirValue = TokenMacro.expandAll(build, projectRoot, listener, configurationBuildDir).trim();
             } catch (MacroEvaluationException e) {
                 listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
                 return false;
@@ -397,7 +407,7 @@ public class XCodeBuilder extends Builder {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleShortVersionString = TokenMacro.expandAll(build, listener, cfBundleShortVersionStringValue);
+                cfBundleShortVersionString = TokenMacro.expandAll(build, projectRoot, listener, cfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
                 returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
@@ -416,7 +426,7 @@ public class XCodeBuilder extends Builder {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleVersion = TokenMacro.expandAll(build, listener, cfBundleVersionValue);
+                cfBundleVersion = TokenMacro.expandAll(build, projectRoot, listener, cfBundleVersionValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
                 returnCode = launcher.launch().envs(envs).cmds(getGlobalConfiguration().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {

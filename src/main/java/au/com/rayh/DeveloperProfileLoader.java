@@ -16,6 +16,7 @@ import hudson.tasks.Builder;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -162,7 +163,7 @@ public class DeveloperProfileLoader extends Builder {
         }
     }
 
-    private static final class GetHomeDirectory implements Callable<FilePath,IOException> {
+    private static final class GetHomeDirectory extends MasterToSlaveCallable<FilePath,IOException> {
         public FilePath call() throws IOException {
             return new FilePath(new File(System.getProperty("user.home")));
         }
