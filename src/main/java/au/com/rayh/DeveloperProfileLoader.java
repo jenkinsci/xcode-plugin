@@ -9,6 +9,7 @@ import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Computer;
 import hudson.model.Item;
 import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
@@ -49,15 +50,19 @@ public class DeveloperProfileLoader extends Builder {
         if (dp==null)
             throw new AbortException("No Apple developer profile is configured");
 
-		// macOS Sierra added extra steps needed for the keychain functions and thus code signing, namely set-key-partition-list
-		// check for an environment variable named SET_KEY_PARTITION_LIST passed to the node for determining if we need to do so
-		// this defaults to false (no environment variable passed) as to not break existing installs
+		// macOS Sierra (10.12) added extra steps needed for the keychain functions and thus code signing, namely set-key-partition-list
+		// here we'll check to see if the OS version of the node running the build is >= 10.12
+		// if it is, then we need to perform this extra step to avoid issues with code signing
 		boolean setKeyPartitionList = false;
-
-		if (build.getEnvironment(listener).get("SET_KEY_PARTITION_LIST") != null) {
-			setKeyPartitionList = build.getEnvironment(listener).get("SET_KEY_PARTITION_LIST").toLowerCase().equals("true");
-		}
 		
+		try {
+			double osVersion = Double.parseDouble(Computer.currentComputer().getSystemProperties().get("os.version").toString());
+			
+			if (osVersion >= 10.12) {
+				setKeyPartitionList = true;
+			}
+		} catch (Exception e) { }
+
         // Note: keychain are usualy suffixed with .keychain. If we change we should probably clean up the ones we created
         String keyChain = "jenkins-"+build.getProject().getFullName().replace('/', '-');
         String keychainPass = UUID.randomUUID().toString();
@@ -110,8 +115,7 @@ public class DeveloperProfileLoader extends Builder {
             
             // flag is different depending on OS
             if (setKeyPartitionList) {
-	            args.add("-A","/usr/bin/codesign");
-	            args.add("-A","/usr/bin/productsign");
+	            args.add("-A");
 	        } else {
 	            args.add("-T","/usr/bin/codesign");
 	            args.add("-T","/usr/bin/productsign");
@@ -122,7 +126,7 @@ public class DeveloperProfileLoader extends Builder {
         }
 
 
-		// necessary for functional code signing on macOS Sierra and up
+		// necessary for functional code signing on macOS Sierra (10.12) and up
         if (setKeyPartitionList) {		
 			args = new ArgumentListBuilder("security","set-key-partition-list");		
 			args.add("-S", "apple-tool:,apple:");
