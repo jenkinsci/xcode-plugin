@@ -53,15 +53,7 @@ public class DeveloperProfileLoader extends Builder {
 		// macOS Sierra (10.12) added extra steps needed for the keychain functions and thus code signing, namely set-key-partition-list
 		// here we'll check to see if the OS version of the node running the build is >= 10.12
 		// if it is, then we need to perform this extra step to avoid issues with code signing
-		boolean setKeyPartitionList = false;
-		
-		try {
-			double osVersion = Double.parseDouble(Computer.currentComputer().getSystemProperties().get("os.version").toString());
-			
-			if (osVersion >= 10.12) {
-				setKeyPartitionList = true;
-			}
-		} catch (Exception e) { }
+		boolean setKeyPartitionList = (osVersionCheck(Computer.currentComputer().getSystemProperties().get("os.version").toString(), "10.11") > 0);
 
         // Note: keychain are usualy suffixed with .keychain. If we change we should probably clean up the ones we created
         String keyChain = "jenkins-"+build.getProject().getFullName().replace('/', '-');
@@ -218,4 +210,25 @@ public class DeveloperProfileLoader extends Builder {
             return new FilePath(new File(System.getProperty("user.home")));
         }
     }
+    
+	private static int osVersionCheck(String str1, String str2) {
+	    String[] vals1 = str1.split("\\.");
+	    String[] vals2 = str2.split("\\.");
+	    int i = 0;
+	    
+	    // set index to first non-equal ordinal or length of shortest version string
+	    while (i < vals1.length && i < vals2.length && vals1[i].equals(vals2[i])) {
+	    	i++;
+	    }
+	    
+	    // compare first non-equal ordinal number
+	    if (i < vals1.length && i < vals2.length) {
+	    	int diff = Integer.valueOf(vals1[i]).compareTo(Integer.valueOf(vals2[i]));
+	        return Integer.signum(diff);
+	    }
+	    
+	    // the strings are equal or one string is a substring of the other
+	    // e.g. "1.2.3" = "1.2.3" or "1.2.3" < "1.2.3.4"
+	    return Integer.signum(vals1.length - vals2.length);
+	}
 }
