@@ -22,11 +22,11 @@
   ~ THE SOFTWARE.
   -->
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:html="jelly:html">
-	<![CDATA[
+    <![CDATA[
 		<script type="text/javascript">
 		<!--
-			var showOrHideKeychainAttributeInput = function(uuid) {
-				var defaultChosen = (document.getElementById("global-keychain-select-" + uuid).selectedIndex == 0);
+			var showOrHideAttributeInput = function(prefix, uuid) {
+				var defaultChosen = (document.getElementById(prefix + uuid).selectedIndex == 0);
 
 				document.getElementById("" + uuid).style.display = defaultChosen ? "block" : "none";
 			};
@@ -34,199 +34,206 @@
 		</script>
 	]]>
 
-	<!-- General build settings -->
-	<f:section title="${%General build settings}">
+    <!-- General build settings -->
+    <f:section title="${%General build settings}">
 
-	    <f:entry title="${%Target}" field="target"
-	      description="Leave empty for all targets">
-	        <f:textbox/>
-	    </f:entry>
+        <f:entry title="${%Target}" field="target" description="Leave empty for all targets">
+            <f:textbox />
+        </f:entry>
 
         <f:entry title="" field="interpretTargetAsRegEx">
             <f:checkbox title="${%Interpret As Regular Expression}" />
         </f:entry>
 
-		<f:advanced title="Settings">
-		    <f:entry title="${%Clean before build?}" field="cleanBeforeBuild"
-		      description="This will delete the build directories before invoking the build.">
-		        <f:checkbox title="Yes" />
-		    </f:entry>
+        <f:advanced title="Settings">
+            <f:entry title="${%Clean before build?}" field="cleanBeforeBuild" description="This will delete the build directories before invoking the build.">
+                <f:checkbox title="Yes" />
+            </f:entry>
 
-		    <f:entry title="${%Allow failing build results?}" field="allowFailingBuildResults"
-		      description="Checking this option will prevent this build step from failing if xcodebuild exits with a non-zero return code.">
-		        <f:checkbox title="Yes" />
-		    </f:entry>
-		    <f:entry title="${%Generate Archive?}" field="generateArchive"
-		    description="Checking this option will generate an xcarchive of the specified scheme. A workspace and scheme are are also needed for archives">
-		    <f:checkbox title="Yes" />
-		    </f:entry>
+            <f:entry title="${%Allow failing build results?}" field="allowFailingBuildResults"
+                description="Checking this option will prevent this build step from failing if xcodebuild exits with a non-zero return code.">
+                <f:checkbox title="Yes" />
+            </f:entry>
+            <f:entry title="${%Generate Archive?}" field="generateArchive"
+                description="Checking this option will generate an xcarchive of the specified scheme. A workspace and scheme are are also needed for archives">
+                <f:checkbox title="Yes" />
+            </f:entry>
 
-		    <f:entry title="${%Configuration}" field="configuration"
-		      description="This is the name of the configuration as defined in the Xcode project.">
-		        <f:textbox default="Release"/>
-		    </f:entry>
+            <f:entry title="${%Configuration}" field="configuration" description="This is the name of the configuration as defined in the Xcode project.">
+                <f:textbox default="Release" />
+            </f:entry>
 
             <f:entry>
-                <f:optionalBlock inline="true" checked="${instance.buildIpa == true}" name="buildIpa" title="${%Pack application and build .ipa?}" description="Checking this option will create a .ipa for each .app found in the build directory.">
-                    <f:entry title="${%.ipa filename pattern}" field="ipaName" description="A pattern for the ipa file name. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">
+                <f:optionalBlock inline="true" checked="${instance.buildIpa == true}" name="buildIpa" title="${%Pack application, build and sign .ipa?}"
+                    description="Checking this option will create a .ipa for each .app found in the build directory.">
+                    <f:entry title="${%Export method}" field="ipaExportMethod"
+                        description="The export method of the .app to generate the .ipa file. Should be one in 'development', 'ad-hoc', 'enterprise' or 'app-store'.">
+                        <f:textbox default="enterprise" />
+                    </f:entry>
+
+                    <f:entry title="${%.ipa filename pattern}" field="ipaName"
+                        description="A pattern for the ipa file name. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">
                         <f:textbox />
                     </f:entry>
 
                     <f:entry title="${%Output directory}" field="ipaOutputDirectory" description="The output directory for the .ipa file, relative to the build directory.">
-                    	<f:textbox />
+                        <f:textbox />
                     </f:entry>
 
-                    <f:entry title="${%Manifest Plist URL}" field="ipaManifestPlistUrl" description="The base URL to use to create a Manifest Plist. If omitted no Manifest Plist will be generated">
+                    <f:entry title="${%Manifest Plist URL}" field="ipaManifestPlistUrl"
+                        description="The base URL to use to create a Manifest Plist. If omitted no Manifest Plist will be generated">
                         <f:textbox />
                     </f:entry>
                 </f:optionalBlock>
             </f:entry>
-		</f:advanced>
-	</f:section>
+        </f:advanced>
+    </f:section>
 
-	<!-- Code signing section -->
-	<f:section title="${%Code signing &amp; OS X keychain options}">
-		<f:advanced title="Code signing settings">
-
-			<f:entry>
-				<f:optionalBlock inline="true" checked="${instance.changeBundleID == true}" name="changeBundleID" field="changeBundleID" title="Change bundle ID?" >
-
-					<f:nested>
-					<table id="${UUID}">
-						<f:entry title="${%New bundle ID}" field="bundleID">
-							<f:textbox />
-						</f:entry>
-						<f:entry title="${%Info.plist path}" field="bundleIDInfoPlistPath"
-							description="Path to Info.plist file to be modified with the new bundle ID">
-							<f:textbox />
-						</f:entry>
-						</table>
-					</f:nested>
-				</f:optionalBlock>
-			</f:entry>
-
-		    <f:entry title="${%Code Signing Identity}" field="codeSigningIdentity"
-		      description="Override the code signing identity specified in the project">
-		        <f:textbox />
-		    </f:entry>
-
-        <f:entry title="${%Sign IPA at build time}" field="signIpaOnXcrun"
-          description="Enable xcrun to sign the IPA at build time">
-            <f:checkbox default="true" />
-        </f:entry>
-
-		    <f:entry title="${%Embedded Profile}" field="embeddedProfileFile"
-		      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile">
-		        <f:textbox />
-		    </f:entry>
-
-		    <j:set var="UUID" value="${descriptor.UUID}" />
+    <!-- Code signing section -->
+    <f:section title="${%Code signing &amp; OS X keychain options}">
+        <f:advanced title="Code signing settings">
 
             <f:entry>
-                <f:optionalBlock inline="true" checked="${instance.unlockKeychain == true}" name="unlockKeychain" title="${%Unlock Keychain?}" field="unlockKeychain">
-				    <f:entry title="${%Keychain}" description="The globally configured keychain to unlock for this build."
-				             field="globalKeychainName">
-				        <select class="setting-input" name="keychainName" foo="${UID}" id="global-keychain-select-${UUID}" onchange="showOrHideKeychainAttributeInput('${UUID}')">
-				        	<f:option selected="${instance.keychainName==null}">none (specify one below)</f:option>
+                <f:optionalBlock inline="true" checked="${instance.changeBundleID == true}" name="changeBundleID" field="changeBundleID" title="Change bundle ID?">
 
-				            <j:forEach var="keychain" items="${descriptor.globalConfiguration.keychains}">
-				            	<j:if test="${keychain.keychainName==instance.keychainName}">
-				            		<j:set var="displayCustomKeychainData" value="none" scope="parent" />
-				            	</j:if>
-
-				                <f:option selected="${keychain.keychainName==instance.keychainName}">${keychain.keychainName}</f:option>
-				            </j:forEach>
-				        </select>
-				    </f:entry>
-
-				    <f:nested>
-				    	<j:if test="${displayCustomKeychainData==null}">
-				    		<j:set var="displayCustomKeychainData" value="block1" />
-				    	</j:if>
-
-				    	<table id="${UUID}" style="display: ${displayCustomKeychainData}">
-						    <f:entry title="${%Keychain path}" field="keychainPath"
-						   	  description="The path of the keychain to use to sign the IPA.">
-						   		<f:textbox />
-						   	</f:entry>
-
-						    <f:entry title="${%Keychain password}" field="keychainPwd"
-						   	  description="The password to use to unlock the keychain.">
-						   		<f:password />
-						   	</f:entry>
-				    	</table>
-				    </f:nested>
+                    <f:nested>
+                        <table id="${UUID}">
+                            <f:entry title="${%New bundle ID}" field="bundleID">
+                                <f:textbox />
+                            </f:entry>
+                            <f:entry title="${%Info.plist path}" field="bundleIDInfoPlistPath" description="Path to Info.plist file to be modified with the new bundle ID">
+                                <f:textbox />
+                            </f:entry>
+                        </table>
+                    </f:nested>
                 </f:optionalBlock>
             </f:entry>
 
-		</f:advanced>
-	</f:section>
+            <j:set var="UUID" value="${descriptor.UUID}" />
+            <f:entry title="${%Development Team}" description="Override the Development Team specified in the project." field="globalDevelopmentTeam">
+                <select class="setting-input" name="developmentTeam" foo="${UID}" id="global-team-select-${UUID}" onchange="showOrHideAttributeInput('global-team-select-', '${UUID}')">
+                    <f:option selected="${instance.developmentTeam==null}">none (specify one below)</f:option>
 
-	<!-- Advanced build options -->
-	<f:section title="${%Advanced Xcode build options}">
-		<f:advanced title="Advanced build settings">
-		    <f:entry title="${%Clean test reports?}" field="cleanTestReports">
-		        <f:checkbox title="Yes" name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
-		    </f:entry>
+                    <j:forEach var="team" items="${descriptor.globalConfiguration.teams}">
+                        <j:if test="${team.teamName==instance.developmentTeam}">
+                            <j:set var="displayCustomTeamData" value="none" scope="parent" />
+                        </j:if>
 
-		    <f:entry title="${%Xcode Schema File}" field="xcodeSchema"
-		      description="Only needed if you want to compile for a specific schema instead of a target.">
-		        <f:textbox />
-		    </f:entry>
+                        <f:option selected="${team.teamName==instance.developmentTeam}">${team.teamName}</f:option>
+                    </j:forEach>
+                </select>
+            </f:entry>
 
-		    <f:entry title="${%SDK}" field="sdk"
-		      description="Leave empty for default SDK">
-		        <f:textbox/>
-		    </f:entry>
+            <f:nested>
+                <j:if test="${displayCustomTeamData==null}">
+                    <j:set var="displayCustomTeamData" value="block" />
+                </j:if>
 
-		    <f:entry title="${%SYMROOT}" field="symRoot"
-		      description="Leave empty for default SYMROOT">
-		        <f:textbox/>
-		    </f:entry>
+                <table id="${UUID}" style="display: ${displayCustomTeamData}">
+                    <f:entry title="${%Development Team ID}" field="developmentTeamID" description="The ID of the Apple development team to use to sign the IPA.">
+                        <f:textbox />
+                    </f:entry>
+                </table>
+            </f:nested>
 
-		    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
-		    	description="Additional xcodebuild arguments">
-		        <f:textarea name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
-		    </f:entry>
 
-		    <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile"
-		      description="Only needed if you want to compile a workspace instead of a project.">
-		        <f:textbox />
-		    </f:entry>
+            <j:set var="UUID" value="${descriptor.UUID}" />
+            <f:entry>
+                <f:optionalBlock inline="true" checked="${instance.unlockKeychain == true}" name="unlockKeychain" title="${%Unlock Keychain?}" field="unlockKeychain">
+                    <f:entry title="${%Keychain}" description="The globally configured keychain to unlock for this build." field="globalKeychainName">
+                        <select class="setting-input" name="keychainName" foo="${UID}" id="global-keychain-select-${UUID}" onchange="showOrHideAttributeInput('global-keychain-select-', '${UUID}')">
+                            <f:option selected="${instance.keychainName==null}">none (specify one below)</f:option>
 
-		    <f:entry title="${%Xcode Project Directory}" field="xcodeProjectPath"
-		      description="Relative path within the workspace that contains the xcode project file(s).">
-		        <f:textbox />
-		    </f:entry>
+                            <j:forEach var="keychain" items="${descriptor.globalConfiguration.keychains}">
+                                <j:if test="${keychain.keychainName==instance.keychainName}">
+                                    <j:set var="displayCustomKeychainData" value="none" scope="parent" />
+                                </j:if>
 
-		    <f:entry title="${%Xcode Project File}" field="xcodeProjectFile"
-		      description="Only needed if there is more than one project file in the Xcode Project Directory">
-		        <f:textbox />
-		    </f:entry>
+                                <f:option selected="${keychain.keychainName==instance.keychainName}">${keychain.keychainName}</f:option>
+                            </j:forEach>
+                        </select>
+                    </f:entry>
 
-		    <f:entry title="${%Build output directory}" field="configurationBuildDir"
-		         description="The value to use for CONFIGURATION_BUILD_DIR setting.">
-		           <f:textbox/>
-		    </f:entry>
+                    <f:nested>
+                        <j:if test="${displayCustomKeychainData==null}">
+                            <j:set var="displayCustomKeychainData" value="block" />
+                        </j:if>
 
-		</f:advanced>
+                        <table id="${UUID}" style="display: ${displayCustomKeychainData}">
+                            <f:entry title="${%Keychain path}" field="keychainPath" description="The path of the keychain to use to sign the IPA.">
+                                <f:textbox />
+                            </f:entry>
 
-	</f:section>
+                            <f:entry title="${%Keychain password}" field="keychainPwd" description="The password to use to unlock the keychain.">
+                                <f:password />
+                            </f:entry>
+                        </table>
+                    </f:nested>
+                </f:optionalBlock>
+            </f:entry>
 
-	<f:section title="${%Versioning}">
-	    <f:entry>
-	        <f:optionalBlock inline="true" checked="${instance.provideApplicationVersion == true}" name="provideApplicationVersion" title="${%Provide version number and run avgtool?}" description="Checking this option will run avgtool and update the CFBundleVersion and CFBundleVersionShortString.">
-	      <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
-	            description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
-	            <f:textbox />
-	          </f:entry>
+        </f:advanced>
+    </f:section>
 
-	      <f:entry title="${%Technical version}" field="cfBundleVersionValue"
-	        description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
-	          <f:textbox />
-	      </f:entry>
-	        </f:optionalBlock>
-	    </f:entry>
-	</f:section>
+    <!-- Advanced build options -->
+    <f:section title="${%Advanced Xcode build options}">
+        <f:advanced title="Advanced build settings">
+            <f:entry title="${%Clean test reports?}" field="cleanTestReports">
+                <f:checkbox title="Yes" name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
+            </f:entry>
+
+            <f:entry title="${%Xcode Schema File}" field="xcodeSchema" description="Only needed if you want to compile for a specific schema instead of a target.">
+                <f:textbox />
+            </f:entry>
+
+            <f:entry title="${%SDK}" field="sdk" description="Leave empty for default SDK">
+                <f:textbox />
+            </f:entry>
+
+            <f:entry title="${%SYMROOT}" field="symRoot" description="Leave empty for default SYMROOT">
+                <f:textbox />
+            </f:entry>
+
+            <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments" description="Additional xcodebuild arguments">
+                <f:textarea name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default="" />
+            </f:entry>
+
+            <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile" description="Only needed if you want to compile a workspace instead of a project.">
+                <f:textbox />
+            </f:entry>
+
+            <f:entry title="${%Xcode Project Directory}" field="xcodeProjectPath" description="Relative path within the workspace that contains the xcode project file(s).">
+                <f:textbox />
+            </f:entry>
+
+            <f:entry title="${%Xcode Project File}" field="xcodeProjectFile" description="Only needed if there is more than one project file in the Xcode Project Directory">
+                <f:textbox />
+            </f:entry>
+
+            <f:entry title="${%Build output directory}" field="buildDir" description="The value to use for the BUILD_DIR setting.">
+                <f:textbox />
+            </f:entry>
+
+        </f:advanced>
+
+    </f:section>
+
+    <f:section title="${%Versioning}">
+        <f:entry>
+            <f:optionalBlock inline="true" checked="${instance.provideApplicationVersion == true}" name="provideApplicationVersion"
+                title="${%Provide version number and run avgtool?}"
+                description="Checking this option will run avgtool and update the CFBundleVersion and CFBundleVersionShortString.">
+                <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
+                    description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
+                    <f:textbox />
+                </f:entry>
+
+                <f:entry title="${%Technical version}" field="cfBundleVersionValue"
+                    description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
+                    <f:textbox />
+                </f:entry>
+            </f:optionalBlock>
+        </f:entry>
+    </f:section>
 
 </j:jelly>

@@ -33,8 +33,22 @@
     <f:entry title="${%xcrun executable path}" field="xcrunPath">
       <f:textbox default="/usr/bin/xcrun"/>
     </f:entry>
-    <f:entry title="${%Sign IPA at build time}" field="signIpaOnXcrun">
-        <f:checkbox default="true" title="${%Yes}" />
+
+    <f:entry title="${%Apple Development Teams}" description="Saved development team configurations">
+      <f:repeatable var="team" items="${descriptor.teams}">
+        <table width="100%">
+          <f:entry title="${%Team Name}"
+                   description="An assigned name for identifying this Apple development team within Jenkins."
+                   field="teamName">
+            <f:textbox name="team.teamName" value="${team.teamName}" />
+          </f:entry>
+          <f:entry title="${%Developement Team ID}"
+                   description="The ID of the Apple development team to use to sign the IPA."
+                   field="teamID">
+            <f:textbox name="team.teamID" value="${team.teamID}" />
+          </f:entry>
+        </table>
+      </f:repeatable>
     </f:entry>
 
     <f:entry title="${%Keychains}" description="Saved keychain configurations">
