@@ -29,10 +29,11 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
+import java.io.Serializable;
 
 @XmlType(name="failure")
 @XmlAccessorType(XmlAccessType.NONE)
-public class TestFailure {
+public class TestFailure implements Serializable {
     @XmlAttribute
     String message;
     
