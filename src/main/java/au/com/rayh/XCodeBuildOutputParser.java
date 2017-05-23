@@ -64,6 +64,7 @@ public class XCodeBuildOutputParser {
     private static Pattern START_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' started.");
     private static Pattern END_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' passed \\((.*) seconds\\).");
     private static Pattern ERROR_TESTCASE = Pattern.compile("(.*): error: -\\[(\\S+) (\\S+)\\] : (.*)");
+    private static Pattern ERROR_UI_TESTCASE = Pattern.compile(".*?Assertion Failure: (.+:\\d+): (.*)");
     private static Pattern FAILED_TESTCASE = Pattern.compile("Test Case '-\\[\\S+ (\\S+)\\]' failed \\((\\S+) seconds\\).");
     private static Pattern FAILED_WITH_EXIT_CODE = Pattern.compile("failed with exit code (\\d+)");
     private static Pattern TERMINATING_EXCEPTION = Pattern.compile(".*\\*\\*\\* Terminating app due to uncaught exception '(\\S+)', reason: '(.+[^\\\\])'.*");
@@ -218,6 +219,16 @@ public class XCodeBuildOutputParser {
 
             requireTestSuite(testSuite);
             requireTestCase(testCase);
+
+            TestFailure failure = new TestFailure(errorMessage, errorLocation);
+            currentTestCase.getFailures().add(failure);
+            return;
+        }
+	
+        m = ERROR_UI_TESTCASE.matcher(line);
+        if(m.matches()) {
+            String errorLocation = m.group(1);
+            String errorMessage = m.group(2);
 
             TestFailure failure = new TestFailure(errorMessage, errorLocation);
             currentTestCase.getFailures().add(failure);

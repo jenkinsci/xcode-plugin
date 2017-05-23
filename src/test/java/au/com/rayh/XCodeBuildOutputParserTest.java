@@ -92,6 +92,11 @@ public class XCodeBuildOutputParserTest {
     public void shouldAddErrorToTestCase() throws Exception {
     	test.shouldAddErrorToTestCase();
     }
+    
+    @Test
+    public void shouldAddUIErrorToTestCase() throws Exception {
+    	test.shouldAddUIErrorToTestCase();
+    }
 
     @Test
     public void shouldParsePassedTestCase() throws Exception {
