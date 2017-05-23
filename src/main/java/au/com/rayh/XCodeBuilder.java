@@ -34,6 +34,7 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Environment;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.CopyOnWriteList;
@@ -745,6 +746,8 @@ public class XCodeBuilder extends Builder {
                 		"SHORT_VERSION", shortVersion,
                 		"BUILD_DATE", lastModified
                 	);
+                    // Add environment variables for downstream tasks
+                    build.getEnvironments().add(Environment.create(customVars));
                     baseName = customVars.expand(ipaName);
                 }
 
