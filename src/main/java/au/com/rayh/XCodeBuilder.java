@@ -269,7 +269,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                         String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
                         String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, Boolean signIpaOnXcrun) {
 
-        this(buildIpa, generateArchive, cleanBeforeBuild, cleanTestReports, configuration,
+        this(buildIpa, generateArchive, false, null, cleanBeforeBuild, cleanTestReports, configuration,
                 target, sdk, xcodeProjectPath, xcodeProjectFile, xcodebuildArguments,
                 cfBundleVersionValue, cfBundleShortVersionStringValue, unlockKeychain,
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
