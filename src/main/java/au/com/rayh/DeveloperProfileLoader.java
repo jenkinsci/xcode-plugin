@@ -1,6 +1,7 @@
 package au.com.rayh;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
@@ -9,13 +10,15 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.Item;
-import hudson.remoting.Callable;
 import hudson.remoting.VirtualChannel;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.ArgumentListBuilder;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
+
+import org.jenkinsci.remoting.RoleChecker;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -34,6 +37,7 @@ import java.util.UUID;
  *
  * @author Kohsuke Kawaguchi
  */
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class DeveloperProfileLoader extends Builder {
     private final String id;
 
@@ -162,9 +166,14 @@ public class DeveloperProfileLoader extends Builder {
         }
     }
 
-    private static final class GetHomeDirectory implements Callable<FilePath,IOException> {
+    private static final class GetHomeDirectory extends MasterToSlaveCallable<FilePath,IOException> {
         public FilePath call() throws IOException {
             return new FilePath(new File(System.getProperty("user.home")));
+        }
+
+        @Override
+        public void checkRoles(RoleChecker roleChecker) throws SecurityException {
+
         }
     }
 }

@@ -24,6 +24,8 @@
 
 package au.com.rayh.report;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -45,14 +47,15 @@ public class TestCase {
     float time;
     
     @XmlElement(name="failure")
-    List<TestFailure> failures = new ArrayList<TestFailure>();
+    List<TestFailure> failures = new ArrayList<>();
     
     @XmlElement(name="error")
-    List<TestError> errors = new ArrayList<TestError>();
+    List<TestError> errors = new ArrayList<>();
 
     public TestCase() {
     }
 
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
     public TestCase(String classname, String name) {
         this.classname = classname;
         this.name = name;

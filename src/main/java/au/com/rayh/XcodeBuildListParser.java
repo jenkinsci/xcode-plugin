@@ -10,9 +10,9 @@ import org.apache.commons.lang.StringUtils;
  */
 public class XcodeBuildListParser {
 
-    private List<String> targets = new ArrayList<String>();
-    private List<String> configurations = new ArrayList<String>();
-    private List<String> schemes = new ArrayList<String>();
+    private List<String> targets = new ArrayList<>();
+    private List<String> configurations = new ArrayList<>();
+    private List<String> schemes = new ArrayList<>();
 
     public XcodeBuildListParser(String xcodebuildListOutput) {
 

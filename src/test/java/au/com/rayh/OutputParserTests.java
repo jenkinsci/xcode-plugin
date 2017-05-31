@@ -104,6 +104,16 @@ class OutputParserTests {
         assertEquals("/Users/ray/Development/Projects/Java/xcodebuild-hudson-plugin/work/jobs/PBS Streamer/workspace/PisClientTestCase.m:21", parser.currentTestCase.getFailures().get(0).getLocation());
         assertEquals("\"((nil) != nil)\" should be true. This always fails", parser.currentTestCase.getFailures().get(0).getMessage());
     }
+	
+	void shouldAddUIErrorToTestCase() throws Exception {
+        parser.currentTestSuite = new TestSuite("host", "PisClientTestCase", new Date());
+        parser.currentTestCase = new TestCase("PisClientTestCase", "testThatFails");
+        String line = "t =    29.77s             Assertion Failure: AppUITests.m:31: UI Testing Failure - No matches found for Alert";
+        parser.handleLine(line);
+        assertEquals(1, parser.currentTestCase.getFailures().size());
+        assertEquals("AppUITests.m:31", parser.currentTestCase.getFailures().get(0).getLocation());
+        assertEquals("UI Testing Failure - No matches found for Alert", parser.currentTestCase.getFailures().get(0).getMessage());
+    }
 
 	void shouldParsePassedTestCase() throws Exception {
         parser.currentTestSuite = new TestSuite("host", "PisClientTestCase", new Date());

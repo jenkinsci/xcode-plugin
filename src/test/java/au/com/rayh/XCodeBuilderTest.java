@@ -28,8 +28,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
-import java.util.Date;
+import java.util.Collections;
 
 import static org.junit.Assert.*;
 import static java.util.Arrays.asList;
@@ -47,7 +46,7 @@ public class XCodeBuilderTest {
 
     @Test
     public void shouldSplitXcodeBuildArgumentsWithoutEscapedSpaces() throws Exception {
-        assertEquals(asList("GCC_SYMBOLS_PRIVATE_EXTERN=NO"),
+        assertEquals(Collections.singletonList("GCC_SYMBOLS_PRIVATE_EXTERN=NO"),
             XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO"));
         assertEquals(asList("GCC_SYMBOLS_PRIVATE_EXTERN=NO", "COPY_PHASE_STRIP=NO"),
             XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO COPY_PHASE_STRIP=NO"));
@@ -55,7 +54,7 @@ public class XCodeBuilderTest {
 
     @Test
     public void shouldSplitXcodeBuildArgumentsWithEscapedSpaces() throws Exception {
-        assertEquals(asList("CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
+        assertEquals(Collections.singletonList("CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
             XCodeBuilder.splitXcodeBuildArguments("CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
         assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
             XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));

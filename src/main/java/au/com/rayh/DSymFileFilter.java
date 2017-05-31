@@ -22,43 +22,24 @@
  * THE SOFTWARE.
  */
 
-package au.com.rayh.report;
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+package au.com.rayh;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlValue;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.Serializable;
 
-@XmlType(name="failure")
-@XmlAccessorType(XmlAccessType.NONE)
-public class TestFailure {
-    @XmlAttribute
-    String message;
-    
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
-    @XmlAttribute
-    String type = "Failure";
-    
-    @XmlValue
-    String location;
+/**
+ *
+ * @author lampietti
+ */
+public class DSymFileFilter implements FileFilter, Serializable {
 
-    public TestFailure() {
+    public boolean accept(File pathname) {
+        return pathname.isDirectory() && pathname.getName().endsWith(".app.dSYM");
     }
-
-    public TestFailure(String message, String location) {
-        this.message = message;
-        this.location = location;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-    
 }

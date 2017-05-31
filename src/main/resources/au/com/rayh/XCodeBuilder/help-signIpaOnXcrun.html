@@ -1,7 +1,7 @@
 <!--
   ~ The MIT License
   ~
-  ~ Copyright (c) 2011 eXo platform
+  ~ Copyright (c) 2011 Ray Yamamoto Hilton
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,10 @@
   -->
 
 <div>
-    <p>Needed if you want to compile for a specific schema instead of a target, or if you want to generate an archive or an IPA.
-        It takes precedence over 'Xcode Configuration' setting and this job 'target' parameter.</p>
+    <p>By default the xcode-plugin will sign the IPA when it runs xcrun on the app folder, dissabeling this
+      will prevent xcrun from having the --sign option added to the command.<br/>
+    This fixes a known issue with Xcode on Mavericks:<br/>
+    http://stackoverflow.com/questions/32504355/error-itms-90339-this-bundle-is-invalid-the-info-plist-contains-an-invalid-ke
+    http://stackoverflow.com/questions/32763288/ios-builds-ipa-creation-no-longer-works-from-the-command-line/32845990#32845990
+    http://cutting.io/posts/packaging-ios-apps-from-the-command-line/</p>
 </div>

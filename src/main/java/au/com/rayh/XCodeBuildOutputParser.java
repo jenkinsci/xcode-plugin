@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,17 +50,21 @@ import au.com.rayh.report.TestSuite;
  * Parse Xcode output and transform into JUnit-style xml test result files.
  * This utility class creates and manages a FilterOutputStream to parse the Xcode output to capture the
  * results of ocunit tests. 
- * @author John Bito <jwbito@gmail.com>
+ * @author John Bito &lt;jwbito@gmail.com&gt;
  */
 
 public class XCodeBuildOutputParser {
 
-    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+	private static DateFormat[] dateFormats = {
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z"),
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+	};
     private static Pattern START_SUITE = Pattern.compile("Test Suite '([^/].+)'.*started at\\s+(.*)");
     private static Pattern END_SUITE = Pattern.compile("Test Suite '([^/].+)'.*\\S+ at\\s+(.*).");
     private static Pattern START_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' started.");
     private static Pattern END_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' passed \\((.*) seconds\\).");
     private static Pattern ERROR_TESTCASE = Pattern.compile("(.*): error: -\\[(\\S+) (\\S+)\\] : (.*)");
+    private static Pattern ERROR_UI_TESTCASE = Pattern.compile(".*?Assertion Failure: (.+:\\d+): (.*)");
     private static Pattern FAILED_TESTCASE = Pattern.compile("Test Case '-\\[\\S+ (\\S+)\\]' failed \\((\\S+) seconds\\).");
     private static Pattern FAILED_WITH_EXIT_CODE = Pattern.compile("failed with exit code (\\d+)");
     private static Pattern TERMINATING_EXCEPTION = Pattern.compile(".*\\*\\*\\* Terminating app due to uncaught exception '(\\S+)', reason: '(.+[^\\\\])'.*");
@@ -109,7 +114,30 @@ public class XCodeBuildOutputParser {
         }
     }
 
-    private void requireTestSuite() {
+	private Date parseDate(String text) throws ParseException {
+		Date date;
+		ParseException parseException;
+
+		date = null;
+		parseException = null;
+
+		for (DateFormat dateFormat : dateFormats) {
+			try {
+				date = dateFormat.parse(text);
+				break;
+			} catch (ParseException exception) {
+				parseException = exception;
+			}
+		}
+
+		if ((date == null) && (parseException != null)) {
+			throw parseException;
+		}
+
+		return date;
+	}
+
+	private void requireTestSuite() {
         if(currentTestSuite==null) {
             throw new RuntimeException("Log statements out of sync: current test suite was null");
         }
@@ -132,13 +160,10 @@ public class XCodeBuildOutputParser {
 
     private void writeTestReport() throws IOException, InterruptedException,
             JAXBException {
-        OutputStream testReportOutputStream = outputForSuite();
-        try {
+        try (OutputStream testReportOutputStream = outputForSuite()) {
             JAXBContext jaxbContext = JAXBContext.newInstance(TestSuite.class);
             Marshaller marshaller = jaxbContext.createMarshaller();
             marshaller.marshal(currentTestSuite, testReportOutputStream);
-        } finally {
-            testReportOutputStream.close();
         }
     }
 
@@ -150,8 +175,8 @@ public class XCodeBuildOutputParser {
     protected void handleLine(String line) throws ParseException, IOException, InterruptedException, JAXBException {
         Matcher m = START_SUITE.matcher(line);
         if(m.matches()) {
-        	consoleLog = true;
-            currentTestSuite = new TestSuite(InetAddress.getLocalHost().getHostName(), m.group(1), dateFormat.parse(m.group(2)));
+        	  consoleLog = true;
+            currentTestSuite = new TestSuite(InetAddress.getLocalHost().getHostName(), m.group(1), parseDate(m.group(2)));
             return;
         }
 
@@ -159,7 +184,7 @@ public class XCodeBuildOutputParser {
         if(m.matches()) {
             if(currentTestSuite==null) return; // if there is no current suite, do nothing
 
-            currentTestSuite.setEndTime(dateFormat.parse(m.group(2)));
+            currentTestSuite.setEndTime(parseDate(m.group(2)));
             writeTestReport();
 
             currentTestSuite = null;
@@ -200,6 +225,16 @@ public class XCodeBuildOutputParser {
             currentTestCase.getFailures().add(failure);
             return;
         }
+	
+        m = ERROR_UI_TESTCASE.matcher(line);
+        if(m.matches()) {
+            String errorLocation = m.group(1);
+            String errorMessage = m.group(2);
+
+            TestFailure failure = new TestFailure(errorMessage, errorLocation);
+            currentTestCase.getFailures().add(failure);
+            return;
+        }
 
         m = FAILED_TESTCASE.matcher(line);
         if(m.matches()) {
@@ -215,7 +250,7 @@ public class XCodeBuildOutputParser {
 
         m = FAILED_WITH_EXIT_CODE.matcher(line);
         if(m.matches()) {
-            exitCode = Integer.valueOf(m.group(1));
+            exitCode = Integer.parseInt(m.group(1));
             return;
         }
 

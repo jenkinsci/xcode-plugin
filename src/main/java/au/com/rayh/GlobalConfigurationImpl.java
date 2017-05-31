@@ -23,12 +23,6 @@
  */
 package au.com.rayh;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import javax.servlet.ServletException;
-
 import net.sf.json.JSONObject;
 
 import org.apache.commons.lang.StringUtils;
@@ -42,6 +36,12 @@ import hudson.model.AutoCompletionCandidates;
 import hudson.util.FormValidation;
 import jenkins.model.GlobalConfiguration;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+
 /**
  * Stores global configuration for XCode.
  *
@@ -49,31 +49,42 @@ import jenkins.model.GlobalConfiguration;
  */
 @Extension
 public final class GlobalConfigurationImpl extends GlobalConfiguration {
-	private String xcodebuildPath = "/usr/bin/xcodebuild";
-	private String xcrunPath = "/usr/bin/xcrun";
-	private String agvtoolPath = "/usr/bin/agvtool";
-	private String defaultKeychain = "";
-    private ArrayList<Keychain> keychains = new ArrayList<Keychain>();
-	
-	public GlobalConfigurationImpl() {
-		load();
-		LOGGER.fine("[Xcode] Default constructor: " + getKeychains().size());
-	}
-	
-	@DataBoundConstructor
-	public GlobalConfigurationImpl(String xcodebuildPath, String xcrunPath, String agvtoolPath, String defaultKeychain, ArrayList<Keychain> keychains) {
-		super();
-		load();
-		
-		this.setXcodebuildPath(xcodebuildPath);
-		this.setXcrunPath(xcrunPath);
-		this.setAgvtoolPath(agvtoolPath);
-		this.setDefaultKeychain(defaultKeychain);
-		this.setKeychains(keychains);
-		
-        LOGGER.fine("[Xcode] DataBoundConstructor: " + keychains.size());
-	}
-	
+    private static final Logger LOGGER = Logger.getLogger(GlobalConfigurationImpl.class.getName());
+    private String xcodebuildPath = "/usr/bin/xcodebuild";
+    private String xcrunPath = "/usr/bin/xcrun";
+    private String agvtoolPath = "/usr/bin/agvtool";
+    private String defaultKeychain = "";
+    private ArrayList<Keychain> keychains = new ArrayList<>();
+    private ArrayList<Team> teams = new ArrayList<>();
+
+    public GlobalConfigurationImpl() {
+        load();
+        LOGGER.fine("[Xcode] Default constructor: " + getKeychains().size());
+    }
+
+    @DataBoundConstructor
+    public GlobalConfigurationImpl(String xcodebuildPath, String xcrunPath, String agvtoolPath, String defaultKeychain, ArrayList<Keychain> keychains, ArrayList<Team> teams) {
+        super();
+        load();
+
+        this.setXcodebuildPath(xcodebuildPath);
+        this.setXcrunPath(xcrunPath);
+        this.setAgvtoolPath(agvtoolPath);
+        this.setDefaultKeychain(defaultKeychain);
+        this.setKeychains(keychains);
+        this.setTeams(teams);
+
+        LOGGER.fine("[Xcode] DataBoundConstructor: keychains.size " + keychains.size());
+        if(teams != null) {
+            LOGGER.fine("[Xcode] DataBoundConstructor: teams.size " + teams.size());
+        }
+    }
+
+    @Deprecated
+    public GlobalConfigurationImpl(String xcodebuildPath, String xcrunPath, String agvtoolPath, String defaultKeychain, ArrayList<Keychain> keychains) {
+        this(xcodebuildPath, xcrunPath, agvtoolPath, defaultKeychain, keychains, null);
+    }
+
     public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
         if (StringUtils.isEmpty(value)) {
             return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
@@ -84,46 +95,48 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
     }
 
     public FormValidation doCheckAgvtoolPath(@QueryParameter String value) throws IOException, ServletException {
-        if (StringUtils.isEmpty(value))
+        if (StringUtils.isEmpty(value)) {
             return FormValidation.error(Messages.XCodeBuilder_agvtoolPathNotSet());
-        else {
+        } else {
             // TODO: check that the file exists (and if an agent is used ?)
         }
         return FormValidation.ok();
     }
 
     public FormValidation doCheckXcrunPath(@QueryParameter String value) throws IOException, ServletException {
-        if (StringUtils.isEmpty(value))
+        if (StringUtils.isEmpty(value)) {
             return FormValidation.error(Messages.XCodeBuilder_xcrunPathNotSet());
-        else {
+        } else {
             // TODO: check that the file exists (and if an agent is used ?)
         }
         return FormValidation.ok();
     }
-    
+
     public FormValidation doCheckDefaultKeychain(@QueryParameter String value) throws IOException, ServletException {
-       if (! StringUtils.isEmpty(value)) {
-        	Boolean foundKeychain = false;
+        if (!StringUtils.isEmpty(value)) {
+            Boolean foundKeychain = false;
             for (Keychain k : getKeychains()) {
-            	if (k.getKeychainName().equals(value)) {
-            		foundKeychain = true;
-            		break;
-            	}
+                if (k.getKeychainName().equals(value)) {
+                    foundKeychain = true;
+                    break;
+                }
             }
-            
-            if (! foundKeychain) {
-            	return FormValidation.error(Messages.OSXKeychainBuildWrapper_invalidDefaultKeychainName(value));
+
+            if (!foundKeychain) {
+                return FormValidation.error(Messages.OSXKeychainBuildWrapper_invalidDefaultKeychainName(value));
             }
         }
-       	
+
         return FormValidation.ok();
     }
-    
+
     public AutoCompletionCandidates doAutoCompleteDefaultKeychain(@QueryParameter String value) {
         AutoCompletionCandidates c = new AutoCompletionCandidates();
-        for (Keychain keychain : getKeychains())
-            if (keychain.getKeychainName().toLowerCase().startsWith(value.toLowerCase()))
+        for (Keychain keychain : getKeychains()) {
+            if (keychain.getKeychainName().toLowerCase().startsWith(value.toLowerCase())) {
                 c.add(keychain.getKeychainName());
+            }
+        }
         return c;
     }
 
@@ -140,51 +153,58 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
     @Override
     public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
         req.bindJSON(this, formData);
-        setKeychains(new ArrayList<Keychain>(req.bindParametersToList(Keychain.class, "keychain.")));
+        setKeychains(new ArrayList<>(req.bindParametersToList(Keychain.class, "keychain.")));
+        setTeams(new ArrayList<>(req.bindParametersToList(Team.class, "team.")));
         save();
-        
+
         return super.configure(req, formData);
     }
 
-	public String getXcodebuildPath() {
-		return xcodebuildPath;
-	}
+    public String getXcodebuildPath() {
+        return xcodebuildPath;
+    }
 
-	public void setXcodebuildPath(String xcodebuildPath) {
-		this.xcodebuildPath = xcodebuildPath;
-	}
+    public void setXcodebuildPath(String xcodebuildPath) {
+        this.xcodebuildPath = xcodebuildPath;
+    }
 
-	public String getXcrunPath() {
-		return xcrunPath;
-	}
+    public String getXcrunPath() {
+        return xcrunPath;
+    }
 
-	public void setXcrunPath(String xcrunPath) {
-		this.xcrunPath = xcrunPath;
-	}
+    public void setXcrunPath(String xcrunPath) {
+        this.xcrunPath = xcrunPath;
+    }
 
-	public String getAgvtoolPath() {
-		return agvtoolPath;
-	}
+    public String getAgvtoolPath() {
+        return agvtoolPath;
+    }
 
-	public void setAgvtoolPath(String agvtoolPath) {
-		this.agvtoolPath = agvtoolPath;
-	}
+    public void setAgvtoolPath(String agvtoolPath) {
+        this.agvtoolPath = agvtoolPath;
+    }
 
     public ArrayList<Keychain> getKeychains() {
         return keychains;
     }
 
-	public void setKeychains(ArrayList<Keychain> keychains) {
-		this.keychains = keychains;
-	}
+    public void setKeychains(ArrayList<Keychain> keychains) {
+        this.keychains = keychains;
+    }
 
-	public String getDefaultKeychain() {
-		return defaultKeychain;
-	}
+    public String getDefaultKeychain() {
+        return defaultKeychain;
+    }
 
-	public void setDefaultKeychain(String defaultKeychain) {
-		this.defaultKeychain = defaultKeychain;
-	}
+    public void setDefaultKeychain(String defaultKeychain) {
+        this.defaultKeychain = defaultKeychain;
+    }
 
-    private static final Logger LOGGER = Logger.getLogger(GlobalConfigurationImpl.class.getName());
+    public ArrayList<Team> getTeams() {
+        return teams;
+    }
+
+    public void setTeams(ArrayList<Team> teams) {
+        this.teams = teams;
+    }
 }
