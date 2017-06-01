@@ -776,7 +776,17 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                             // Create if non-existent
                             if (! ipaOutputPath.exists()) {
                                     ipaOutputPath.mkdirs();
-                            }
+                            } else {
+                                // Clean stuff up                                                                
+                                listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+                                for (FilePath path : ipaOutputPath.list("*.ipa")) {
+                                    path.delete();
+                                }
+                                listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
+                                for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
+                                    path.delete();
+                                }                                
+                            }                                 
                         }
                 }
 
