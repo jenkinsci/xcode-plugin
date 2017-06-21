@@ -40,6 +40,6 @@ import java.io.Serializable;
 public class DSymFileFilter implements FileFilter, Serializable {
 
     public boolean accept(File pathname) {
-        return pathname.isDirectory() && pathname.getName().endsWith(".app.dSYM");
+        return pathname.isDirectory() && (pathname.getName().endsWith(".app.dSYM") || pathname.getName().endsWith(".appex.dSYM"));
     }
 }
