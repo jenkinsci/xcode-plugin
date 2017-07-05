@@ -634,9 +634,6 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         if(executeTests){
             commandLine.add("test");
         }
-        if(!skipBuild){
-            commandLine.add("build");
-        }
 
         //Bug JENKINS-30362
         //Generating an archive builds the project twice
@@ -649,7 +646,9 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", archive:YES");
         }else{
             xcodeReport.append(", archive:NO");
-            commandLine.add("build");
+            if(!skipBuild){
+                commandLine.add("build");
+            }
         }
         //END Bug JENKINS-30362
 
