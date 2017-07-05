@@ -204,6 +204,12 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
      */
     public final String ipaManifestPlistUrl;
 
+
+    public final Boolean executeTests;
+
+    public final Boolean skipBuild;
+
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
@@ -212,7 +218,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
     		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod, Boolean executeTests, Boolean skipBuild) {
 
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
@@ -246,6 +252,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
         this.ipaExportMethod = ipaExportMethod;
+        this.executeTests = executeTests;
+        this.skipBuild = skipBuild;
     }
 
     @Deprecated
@@ -263,7 +271,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
                 xcodeSchema, configurationBuildDir, "", "", allowFailingBuildResults,
                 ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
-                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc");
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc", false, false);
     }
 
     @SuppressWarnings("unused")
@@ -619,6 +627,13 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", clean: YES");
         } else {
             xcodeReport.append(", clean: NO");
+        }
+
+        if(executeTests){
+            commandLine.add("test");
+        }
+        if(!skipBuild){
+            commandLine.add("build");
         }
 
         //Bug JENKINS-30362
