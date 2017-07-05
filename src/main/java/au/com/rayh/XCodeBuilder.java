@@ -629,11 +629,6 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", clean: NO");
         }
 
-        // Bug JENKINS-20577
-        // Adds ability to disable building / enable testing during execution
-        if(executeTests){
-            commandLine.add("test");
-        }
 
         //Bug JENKINS-30362
         //Generating an archive builds the project twice
@@ -646,9 +641,15 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", archive:YES");
         }else{
             xcodeReport.append(", archive:NO");
+            // Bug JENKINS-20577
+            // Adds ability to disable building / enable testing during execution
             if(!skipBuild){
                 commandLine.add("build");
             }
+            if(executeTests){
+                commandLine.add("test");
+            }
+
         }
         //END Bug JENKINS-30362
 
