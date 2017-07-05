@@ -259,6 +259,25 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     @Deprecated
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
                         String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
+                        String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
+                        String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
+                        String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
+                        String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
+                        String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
+        this(buildIpa, generateArchive, cleanBeforeBuild, cleanTestReports, configuration,
+                target, sdk, xcodeProjectPath, xcodeProjectFile, xcodebuildArguments,
+                cfBundleVersionValue, cfBundleShortVersionStringValue, unlockKeychain,
+                keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
+                xcodeSchema, buildDir, developmentTeamName, developmentTeamID, allowFailingBuildResults,
+                ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, ipaExportMethod, false, false);
+
+        }
+
+
+    @Deprecated
+    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
+                        String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
                         String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
                         String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
                         String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
