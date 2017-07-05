@@ -629,6 +629,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", clean: NO");
         }
 
+        // Bug JENKINS-20577
+        // Adds ability to disable building / enable testing during execution
         if(executeTests){
             commandLine.add("test");
         }
