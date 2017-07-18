@@ -204,6 +204,12 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
      */
     public final String ipaManifestPlistUrl;
 
+
+    public final Boolean executeTests;
+
+    public final Boolean skipBuild;
+
+
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
@@ -212,7 +218,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
     		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod, Boolean executeTests, Boolean skipBuild) {
 
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
@@ -246,7 +252,28 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
         this.ipaExportMethod = ipaExportMethod;
+        this.executeTests = executeTests;
+        this.skipBuild = skipBuild;
     }
+
+    @Deprecated
+    public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
+                        String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments,
+                        String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
+                        String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
+                        String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
+                        String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
+                        String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
+        this(buildIpa, generateArchive, cleanBeforeBuild, cleanTestReports, configuration,
+                target, sdk, xcodeProjectPath, xcodeProjectFile, xcodebuildArguments,
+                cfBundleVersionValue, cfBundleShortVersionStringValue, unlockKeychain,
+                keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
+                xcodeSchema, buildDir, developmentTeamName, developmentTeamID, allowFailingBuildResults,
+                ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, ipaExportMethod, false, false);
+
+        }
+
 
     @Deprecated
     public XCodeBuilder(Boolean buildIpa, Boolean generateArchive, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration,
@@ -263,7 +290,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
                 xcodeSchema, configurationBuildDir, "", "", allowFailingBuildResults,
                 ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
-                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc");
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc", false, false);
     }
 
     @SuppressWarnings("unused")
@@ -621,6 +648,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", clean: NO");
         }
 
+
         //Bug JENKINS-30362
         //Generating an archive builds the project twice
         //commandLine.add("build");
@@ -632,7 +660,15 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             xcodeReport.append(", archive:YES");
         }else{
             xcodeReport.append(", archive:NO");
-            commandLine.add("build");
+            // Bug JENKINS-20577
+            // Adds ability to disable building / enable testing during execution
+            if(!skipBuild){
+                commandLine.add("build");
+            }
+            if(executeTests){
+                commandLine.add("test");
+            }
+
         }
         //END Bug JENKINS-30362
 
