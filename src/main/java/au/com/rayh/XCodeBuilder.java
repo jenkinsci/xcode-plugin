@@ -833,29 +833,30 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 // also zip up the symbols, if present
                 listener.getLogger().println("Archiving dSYM");
                 List<FilePath> dSYMs = buildDirectory.absolutize().child(configuration + "-" + buildPlatform).list(new DSymFileFilter());
+                if (dSYMs != null) {
+                    if (dSYMs.isEmpty()) {
+                        listener.getLogger().println("No dSYM file found in " + buildDirectory.absolutize().child(configuration + "-" + buildPlatform) + "!");
+                    } else {
+                        for (FilePath dSYM : dSYMs) {
+                            returnCode = launcher.launch()
+                                    .envs(envs)
+                                    .stdout(listener)
+                                    .pwd(buildDirectory)
+                                    .cmds("ditto",
+                                            "-c",
+                                            "-k",
+                                            "--keepParent",
+                                            "-rsrc",
+                                            dSYM.absolutize().getRemote(),
+                                            ipaOutputPath.child(baseName + "-dSYM.zip")
+                                                    .absolutize()
+                                                    .getRemote())
+                                    .join();
 
-                if (dSYMs != null && dSYMs.isEmpty()) {
-                    listener.getLogger().println("No dSYM file found in " + buildDirectory.absolutize().child(configuration + "-" + buildPlatform) + "!");
-
-                    for (FilePath dSYM : dSYMs) {
-                        returnCode = launcher.launch()
-                                .envs(envs)
-                                .stdout(listener)
-                                .pwd(buildDirectory)
-                                .cmds("ditto",
-                                        "-c",
-                                        "-k",
-                                        "--keepParent",
-                                        "-rsrc",
-                                        dSYM.absolutize().getRemote(),
-                                        ipaOutputPath.child(baseName + "-dSYM.zip")
-                                                .absolutize()
-                                                .getRemote())
-                                .join();
-
-                        if (returnCode > 0) {
-                            listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
-                            return false;
+                            if (returnCode > 0) {
+                                listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
+                                return false;
+                            }
                         }
                     }
                 }
