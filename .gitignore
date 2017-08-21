@@ -5,4 +5,5 @@ test-*
 *.iml
 .DS_Store
 *.orig
-/examples
+TEST-*.xml
+Makefile

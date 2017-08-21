@@ -1,0 +1,53 @@
+PROJECT_NAME = "myapp-ios-app"
+INFO_PLIST = "myapp-ios-app/myapp-ios-app-Info.plist"
+CODE_SIGN_PROFILE_ID = "my-developer-profile-id"
+VERSION = "0.1-alpha"
+SHORT_VERSION = "0.1"
+BUNDLE_ID = "com.xcode.myapp-ios-app"
+OUTPUT_FILE_NAME = "myapp.ipa"
+
+XC_VERSION = "8.3"
+CLEAN = true
+
+node('ios') {
+    stage('Checkout') {
+        checkout scm
+    }
+
+    stage('Prepare') {
+        sh '/usr/local/bin/pod install'
+    }
+
+    stage('Build') {
+        withEnv(["XC_VERSION=${XC_VERSION}"]) {
+            xcodeBuild(
+                    cleanBeforeBuild: CLEAN,
+                    src: './',
+                    schema: "${PROJECT_NAME}",
+                    workspace: "${PROJECT_NAME}",
+                    buildDir: "build",
+                    sdk: "iphoneos",
+                    version: "${VERSION}",
+                    shortVersion: "${SHORT_VERSION}",
+                    bundleId: "${BUNDLE_ID}",
+                    infoPlistPath: "${INFO_PLIST}",
+                    flags: '-fstack-protector -fstack-protector-all ENABLE_BITCODE=NO',
+                    autoSign: false
+            )
+        }
+    }
+
+    stage('CodeSign') {
+        codeSign(
+                profileId: "${CODE_SIGN_PROFILE_ID}",
+                clean: CLEAN,
+                verify: true,
+                ipaName: "${OUTPUT_FILE_NAME}",
+                appPath: "build/Debug-iphoneos/${PROJECT_NAME}.app"
+        )
+    }
+
+    stage('Archive') {
+        archiveArtifacts "build/Debug-iphoneos/${OUTPUT_FILE_NAME}"
+    }
+}

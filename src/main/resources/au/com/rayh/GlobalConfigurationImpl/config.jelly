@@ -34,6 +34,9 @@
     <f:entry title="${%xcrun executable path}" field="xcrunPath">
       <f:textbox default="/usr/bin/xcrun"/>
     </f:entry>
+    <f:entry title="${%Apple WWDR certificate path}" field="defaultWWDRCertPath">
+      <f:textbox default="$HOME/AppleWWDRCA.cer" />
+    </f:entry>
 
     <f:entry title="${%Apple Development Teams}" description="Saved development team configurations">
       <f:repeatable var="team" items="${descriptor.teams}">

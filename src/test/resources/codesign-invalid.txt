@@ -1,0 +1,2 @@
+someapp.app: invalid on disk
+someapp.app: satisfies its Designated Requirement

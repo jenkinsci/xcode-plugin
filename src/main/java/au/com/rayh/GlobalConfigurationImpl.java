@@ -54,6 +54,8 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
     private String xcrunPath = "/usr/bin/xcrun";
     private String agvtoolPath = "/usr/bin/agvtool";
     private String defaultKeychain = "";
+    private String defaultWWDRCertPath = "$HOME/AppleWWDRCA.cer";
+
     private ArrayList<Keychain> keychains = new ArrayList<>();
     private ArrayList<Team> teams = new ArrayList<>();
 
@@ -206,5 +208,13 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
 
     public void setTeams(ArrayList<Team> teams) {
         this.teams = teams;
+    }
+
+    public String getDefaultWWDRCertPath() {
+        return  this.defaultWWDRCertPath;
+    }
+
+    public void setDefaultWWDRCertPath(String path) {
+        this.defaultWWDRCertPath = path;
     }
 }

@@ -115,15 +115,17 @@ public class DeveloperProfile extends BaseStandardCredentials {
 
     @Extension
     public static class DescriptorImpl extends CredentialsDescriptor {
+        private static final String DISPLAY_NAME = "Apple Developer Profile";
+
         @Override
         public String getDisplayName() {
-            return "Apple Developer Profile";
+            return DISPLAY_NAME;
         }
     }
 
     static class ConfidentialKeyImpl extends ConfidentialKey {
         ConfidentialKeyImpl(String id) {
-            super(DeveloperProfile.class.getName()+"."+id);
+            super(DeveloperProfile.class.getCanonicalName() + "." + id);
         }
 
         public void store(FileItem submitted) throws IOException {
