@@ -79,6 +79,11 @@
                         description="The export method of the .app to generate the .ipa file. Should be one in 'development', 'ad-hoc', 'enterprise' or 'app-store'.">
                         <f:textbox default="ad-hoc" />
                     </f:entry>
+                    
+                    <f:entry title="${%UploadSymbols}" field="uploadSymbols"
+                        description="For App Store exports, should the package include symbols? Defaults to YES.">
+                        <f:textbox default="true"/>
+                    </f:entry>
 
                     <f:entry title="${%.ipa filename pattern}" field="ipaName"
                         description="A pattern for the ipa file name. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">

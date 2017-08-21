@@ -76,6 +76,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             + "<plist version=\"1.0\"><dict>"
             + "<key>method</key><string>${IPA_EXPORT_METHOD}</string>"
             + "<key>teamID</key><string>${DEVELOPMENT_TEAM}</string>"
+            + "<key>uploadSymbols</key><${UPLOADSYMBOLS}/>"
             + "</dict></plist>";
 
     /**
@@ -212,6 +213,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
      * @since 1.5
      */
     public final String ipaManifestPlistUrl;
+    
+    public final String uploadSymbols;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -222,7 +225,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
     		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod ,String uploadSymbols) {
 
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
@@ -258,6 +261,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
         this.ipaExportMethod = ipaExportMethod;
+        this.uploadSymbols = uploadSymbols;
     }
 
     @Deprecated
@@ -293,7 +297,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
                 xcodeSchema, configurationBuildDir, "", "", allowFailingBuildResults,
                 ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
-                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc");
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc" ,"true");
     }
 
     @SuppressWarnings("unused")
@@ -350,6 +354,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         String bundleIDInfoPlistPath = envs.expand(this.bundleIDInfoPlistPath);
         String ipaManifestPlistUrl = envs.expand(this.ipaManifestPlistUrl);
         String ipaExportMethod = envs.expand(this.ipaExportMethod);
+        String ipaUploadSymbols = envs.expand(this.uploadSymbols);
         // End expanding all string variables in parameters
 
         // Set the working directory
@@ -750,7 +755,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             FilePath exportPlistLocation = ipaOutputPath.child(ipaExportMethod + developmentTeamID + "Export.plist");
             String exportPlist = EXPORT_PLIST_TEMPLATE
                     .replace("${IPA_EXPORT_METHOD}", ipaExportMethod)
-                    .replace("${DEVELOPMENT_TEAM}", developmentTeamID);
+                    .replace("${DEVELOPMENT_TEAM}", developmentTeamID)
+                    .replace("${UPLOADSYMBOLS}", ipaUploadSymbols);
             exportPlistLocation.write(exportPlist, "UTF-8");
 
 
