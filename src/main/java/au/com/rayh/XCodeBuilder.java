@@ -189,10 +189,14 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     /**
      * @since 1.4
      */
-    public final String ipaOutputDirectory;
+    public final String ipaOutputDirectory;    
+    /**
+     * @since 2.0.1
+     */
+    public final String individualIpaOutputDirectory;
     /**
      * @since 1.4
-     */
+     */    
     public Boolean provideApplicationVersion;
     /**
      * @since 1.4
@@ -221,7 +225,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     		String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
-    		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
+    		String ipaName, String individualIpaOutputDirectory, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
     		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
 
         this.buildIpa = buildIpa;
@@ -250,7 +254,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         this.buildDir = buildDir;
         this.allowFailingBuildResults = allowFailingBuildResults;
         this.ipaName = ipaName;
-        this.ipaOutputDirectory = ipaOutputDirectory;
+        this.individualIpaOutputDirectory = individualIpaOutputDirectory;
+        this.ipaOutputDirectory = ipaOutputDirectory;        
         this.provideApplicationVersion = provideApplicationVersion;
         this.changeBundleID = changeBundleID;
         this.bundleID = bundleID;
@@ -284,7 +289,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                         String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain,
                         String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
                         String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
-                        String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
+                        String ipaName, String individualIpaOutputDirectory, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
                         String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, Boolean signIpaOnXcrun) {
 
         this(buildIpa, generateArchive, false, null, cleanBeforeBuild, cleanTestReports, configuration,
@@ -292,7 +297,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 cfBundleVersionValue, cfBundleShortVersionStringValue, unlockKeychain,
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
                 xcodeSchema, configurationBuildDir, "", "", allowFailingBuildResults,
-                ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
+                ipaName, individualIpaOutputDirectory, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
                 bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc");
     }
 
@@ -344,7 +349,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         String xcodeWorkspaceFile = envs.expand(this.xcodeWorkspaceFile);
         String cfBundleVersionValue = envs.expand(this.cfBundleVersionValue);
         String cfBundleShortVersionStringValue = envs.expand(this.cfBundleShortVersionStringValue);
-        String ipaName = envs.expand(this.ipaName);
+        String ipaName = envs.expand(this.ipaName);        
+        String individualIpaOutputDirectory = envs.expand(this.individualIpaOutputDirectory);
         String ipaOutputDirectory = envs.expand(this.ipaOutputDirectory);
         String bundleID = envs.expand(this.bundleID);
         String bundleIDInfoPlistPath = envs.expand(this.bundleIDInfoPlistPath);
@@ -734,25 +740,22 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             if (ipaOutputPath == null) {
             	ipaOutputPath = buildDirectory;
             }
-
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
-            for (FilePath path : ipaOutputPath.list("*.ipa")) {
-                path.delete();
+            
+            // If individual ipa directory is not empty then we should not delete
+            // anything.
+            if (ipaOutputDirectory != null && ! StringUtils.isEmpty(ipaOutputDirectory)) {
+                listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+                for (FilePath path : ipaOutputPath.list("*.ipa")) {
+                    path.delete();
+                }
+                listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
+                for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
+                    path.delete();
+                }
             }
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
-            for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
-                path.delete();
-            }
+            
             // packaging IPA
-            listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
-
-
-            FilePath exportPlistLocation = ipaOutputPath.child(ipaExportMethod + developmentTeamID + "Export.plist");
-            String exportPlist = EXPORT_PLIST_TEMPLATE
-                    .replace("${IPA_EXPORT_METHOD}", ipaExportMethod)
-                    .replace("${DEVELOPMENT_TEAM}", developmentTeamID);
-            exportPlistLocation.write(exportPlist, "UTF-8");
-
+            listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());           
 
             List<FilePath> archives = buildDirectory.list(new XCArchiveFileFilter());
             // FilePath is based on File.listFiles() which can randomly fail | http://stackoverflow.com/questions/3228147/retrieving-the-underlying-error-when-file-listfiles-return-null
@@ -787,21 +790,55 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                		listener.getLogger().println("You have to provide a value for either the marketing or technical version. Found neither.");
                		return false;
                	}
-
+                                        
                 String lastModified = new SimpleDateFormat("yyyy.MM.dd").format(new Date(archive.lastModified()));
 
                 String baseName = archive.getBaseName().replaceAll(" ", "_") + (shortVersion.isEmpty() ? "" : "-" + shortVersion) + (version.isEmpty() ? "" : "-" + version);
-                // If custom .ipa name pattern has been provided, use it and expand version and build date variables
-                if (! StringUtils.isEmpty(ipaName)) {
+                                
+                // If custom .ipa name pattern or individual output directory pattern has been provided, 
+                // use it and expand version and build date variables                
+                if (! StringUtils.isEmpty(ipaName) || ! StringUtils.isEmpty(individualIpaOutputDirectory)) {
                 	EnvVars customVars = new EnvVars(
                 		"BASE_NAME", archive.getBaseName().replaceAll(" ", "_"),
                 		"VERSION", version,
                 		"SHORT_VERSION", shortVersion,
                 		"BUILD_DATE", lastModified
                 	);
-                    baseName = customVars.expand(ipaName);
+                        
+                        if(! StringUtils.isEmpty(ipaName)) {
+                            baseName = customVars.expand(ipaName);
+                        }
+
+                        if(! StringUtils.isEmpty(individualIpaOutputDirectory)) {
+                            individualIpaOutputDirectory = customVars.expand(individualIpaOutputDirectory);
+
+                            ipaOutputPath = ipaOutputPath.child(individualIpaOutputDirectory);
+
+                            // Create if non-existent
+                            if (! ipaOutputPath.exists()) {
+                                    ipaOutputPath.mkdirs();
+                            } else {
+                                // Clean stuff up                                                                
+                                listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+                                for (FilePath path : ipaOutputPath.list("*.ipa")) {
+                                    path.delete();
+                                }
+                                listener.getLogger().println(Messages.XCodeBuilder_cleaningDSYM());
+                                for (FilePath path : ipaOutputPath.list("*-dSYM.zip")) {
+                                    path.delete();
+                                }                                
+                            }                                 
+                        }
                 }
 
+                // Take care of export plist file.
+                FilePath exportPlistLocation = ipaOutputPath.child(ipaExportMethod + developmentTeamID + "Export.plist");
+                String exportPlist = EXPORT_PLIST_TEMPLATE
+                        .replace("${IPA_EXPORT_METHOD}", ipaExportMethod)
+                        .replace("${DEVELOPMENT_TEAM}", developmentTeamID);
+                exportPlistLocation.write(exportPlist, "UTF-8");
+                                                
+                // Take care of ipa
                 String ipaFileName = baseName + ".ipa";
                 FilePath ipaLocation = ipaOutputPath.child(ipaFileName);
 
@@ -813,7 +850,6 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 if (buildPlatform.contains("simulator")) {
                     listener.getLogger().println(Messages.XCodeBuilder_warningPackagingIPAForSimulatorSDK(sdk));
                 }
-
 
                 List<String> packageCommandLine = new ArrayList<>();
                 packageCommandLine.add(getGlobalConfiguration().getXcodebuildPath());

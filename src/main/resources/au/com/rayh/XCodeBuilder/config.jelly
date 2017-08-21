@@ -85,6 +85,10 @@
                         <f:textbox />
                     </f:entry>
 
+                    <f:entry title="${%Individual ipa output directory}" field="individualIpaOutputDirectory" description="The output directory for each individual .ipa file, relative to the output directory. You may use $${VERSION} and $${BUILD_DATE} (yyyy.MM.dd) in this string">
+                        <f:textbox />
+                    </f:entry>
+
                     <f:entry title="${%Output directory}" field="ipaOutputDirectory" description="The output directory for the .ipa file, relative to the build directory.">
                         <f:textbox />
                     </f:entry>
