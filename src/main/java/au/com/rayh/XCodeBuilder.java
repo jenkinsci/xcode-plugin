@@ -68,9 +68,37 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
     private static final int SIGTERM = 143;
 
-    private static final String MANIFEST_PLIST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
-            + "<plist version=\"1.0\"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${IPA_URL_BASE}/${IPA_NAME}</string></dict></array>"
-            + "<key>metadata</key><dict><key>bundle-identifier</key><string>${BUNDLE_ID}</string><key>bundle-version</key><string>${BUNDLE_VERSION}</string><key>kind</key><string>software</string><key>title</key><string>${APP_NAME}</string></dict></dict></array></dict></plist>";
+    private static final String MANIFEST_PLIST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+            + "<plist version=\"1.0\">\n"
+            + "<dict>\n"
+            + "    <key>items</key>\n"
+            + "    <array>\n"
+            + "        <dict>\n"
+            + "            <key>assets</key>\n"
+            + "            <array>\n"
+            + "                <dict>\n"
+            + "                    <key>kind</key>\n"
+            + "                    <string>software-package</string>\n"
+            + "                    <key>url</key>\n"
+            + "                    <string>${IPA_URL_BASE}/${IPA_NAME}</string>\n"
+            + "                </dict>\n"
+            + "            </array>\n"
+            + "            <key>metadata</key>\n"
+            + "            <dict>\n"
+            + "                <key>bundle-identifier</key>\n"
+            + "                <string>${BUNDLE_ID}</string>\n"
+            + "                <key>bundle-version</key>\n"
+            + "                <string>${BUNDLE_VERSION}</string>\n"
+            + "                <key>kind</key>\n"
+            + "                <string>software</string>\n"
+            + "                <key>title</key>\n"
+            + "                <string>${APP_NAME}</string>\n"
+            + "            </dict>\n"
+            + "        </dict>\n"
+            + "    </array>\n"
+            + "</dict>\n"
+            + "</plist>";
 
     private static final String EXPORT_PLIST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
             + "<plist version=\"1.0\"><dict>"
@@ -869,12 +897,12 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                     String bundleId = "";
 
                     output.reset();
-                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleIdentifier", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
+                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :ApplicationProperties:CFBundleIdentifier", archive.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
                     if (returnCode == 0) {
                         bundleId = output.toString().trim();
                     }
                     output.reset();
-                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :CFBundleDisplayName", app.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
+                    returnCode = launcher.launch().envs(envs).cmds("/usr/libexec/PlistBuddy", "-c", "Print :Name", archive.absolutize().child("Info.plist").getRemote()).stdout(output).pwd(projectRoot).join();
                     if (returnCode == 0) {
                         displayName = output.toString().trim();
                     }
