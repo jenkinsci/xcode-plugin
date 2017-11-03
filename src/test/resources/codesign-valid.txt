@@ -1,0 +1,2 @@
+someapp.app: valid on disk
+someapp.app: satisfies its Designated Requirement

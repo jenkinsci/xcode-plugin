@@ -105,7 +105,7 @@ public class XCodeBuildOutputParser {
                 try {
                     handleLine(buffer.toString());
                     buffer = new StringBuilder();
-                } catch(Exception e) {  // Very fugly
+                } catch(ParseException | InterruptedException | JAXBException e) {
                     throw new IOException(e);
                 }
             } else {
