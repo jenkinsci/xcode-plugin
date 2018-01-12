@@ -72,11 +72,18 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
             + "<plist version=\"1.0\"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${IPA_URL_BASE}/${IPA_NAME}</string></dict></array>"
             + "<key>metadata</key><dict><key>bundle-identifier</key><string>${BUNDLE_ID}</string><key>bundle-version</key><string>${BUNDLE_VERSION}</string><key>kind</key><string>software</string><key>title</key><string>${APP_NAME}</string></dict></dict></array></dict></plist>";
 
+    // Required for xcode9 signing
     private static final String EXPORT_PLIST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
             + "<plist version=\"1.0\"><dict>"
             + "<key>method</key><string>${IPA_EXPORT_METHOD}</string>"
             + "<key>teamID</key><string>${DEVELOPMENT_TEAM}</string>"
+            + "${EXPORT_PLIST_PROVISIONING_TEMPLATE}"
             + "</dict></plist>";
+    
+    /**
+     * xcode 9 sign
+     */
+    private static final String EXPORT_PLIST_PROVISIONING_TEMPLATE ="<key>provisioningProfiles</key><dict><key>${PROVISIONINGPROFILES_KEY}</key><string>${PROVISIONINGPROFILES_VALUE}</string></dict>";    
 
     /**
      * @since 1.0
@@ -212,6 +219,16 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
      * @since 1.5
      */
     public final String ipaManifestPlistUrl;
+    
+    /**
+     * @since 2.0.1
+     */
+    public final String provisioningProfilesKey;
+    
+    /**
+     * @since 2.0.1
+     */
+    public final String provisioningProfilesValue;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -222,7 +239,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     		String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
     		String xcodeSchema, String buildDir, String developmentTeamName, String developmentTeamID, Boolean allowFailingBuildResults,
     		String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
-    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod) {
+    		String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, String ipaExportMethod, String provisioningProfilesKey, String provisioningProfilesValue) {
 
         this.buildIpa = buildIpa;
         this.generateArchive = generateArchive;
@@ -258,6 +275,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         this.interpretTargetAsRegEx = interpretTargetAsRegEx;
         this.ipaManifestPlistUrl = ipaManifestPlistUrl;
         this.ipaExportMethod = ipaExportMethod;
+        this.provisioningProfilesKey = provisioningProfilesKey;
+        this.provisioningProfilesValue = provisioningProfilesValue;
     }
 
     @Deprecated
@@ -275,7 +294,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
                 xcodeSchema, buildDir, developmentTeamName, developmentTeamID, allowFailingBuildResults,
                 ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
-                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, ipaExportMethod);
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, ipaExportMethod, null, null);
     }
 
     @Deprecated
@@ -285,7 +304,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                         String keychainName, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile,
                         String xcodeSchema, String configurationBuildDir, String codeSigningIdentity, Boolean allowFailingBuildResults,
                         String ipaName, Boolean provideApplicationVersion, String ipaOutputDirectory, Boolean changeBundleID, String bundleID,
-                        String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, Boolean signIpaOnXcrun) {
+                        String bundleIDInfoPlistPath, String ipaManifestPlistUrl, Boolean interpretTargetAsRegEx, Boolean signIpaOnXcrun, String provisioningProfilesKey, String provisioningProfilesValue) {
 
         this(buildIpa, generateArchive, false, null, cleanBeforeBuild, cleanTestReports, configuration,
                 target, sdk, xcodeProjectPath, xcodeProjectFile, xcodebuildArguments,
@@ -293,7 +312,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
                 keychainName, keychainPath, keychainPwd, symRoot, xcodeWorkspaceFile,
                 xcodeSchema, configurationBuildDir, "", "", allowFailingBuildResults,
                 ipaName, provideApplicationVersion, ipaOutputDirectory, changeBundleID, bundleID,
-                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc");
+                bundleIDInfoPlistPath, ipaManifestPlistUrl, interpretTargetAsRegEx, "ad-hoc", provisioningProfilesKey, provisioningProfilesValue);
     }
 
     @SuppressWarnings("unused")
@@ -748,9 +767,20 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
 
             FilePath exportPlistLocation = ipaOutputPath.child(ipaExportMethod + developmentTeamID + "Export.plist");
+            
+            //Required for xcode9 signing
+            String exportProvisioningPlist = "";
+            if(StringUtils.isNotBlank(provisioningProfilesKey)) {
+            		exportProvisioningPlist = EXPORT_PLIST_PROVISIONING_TEMPLATE
+                        .replace("${PROVISIONINGPROFILES_KEY}", provisioningProfilesKey)
+                        .replace("${PROVISIONINGPROFILES_VALUE}", provisioningProfilesValue);
+            }
+            
             String exportPlist = EXPORT_PLIST_TEMPLATE
                     .replace("${IPA_EXPORT_METHOD}", ipaExportMethod)
-                    .replace("${DEVELOPMENT_TEAM}", developmentTeamID);
+                    .replace("${DEVELOPMENT_TEAM}", developmentTeamID)
+                    .replace("${EXPORT_PLIST_PROVISIONING_TEMPLATE}", exportProvisioningPlist);
+            
             exportPlistLocation.write(exportPlist, "UTF-8");
 
 

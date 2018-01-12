@@ -93,6 +93,19 @@
                         description="The base URL to use to create a Manifest Plist. If omitted no Manifest Plist will be generated">
                         <f:textbox />
                     </f:entry>
+                    
+                     
+                    <f:entry title="${%Sign ProvisioningProfiles Key}" field="provisioningProfilesKey"
+                        description="xcode9 used as the value of the provisioningProfiles key field when signed">
+                        <f:textbox />
+                    </f:entry>
+                    
+                    <f:entry title="${%Sign ProvisioningProfiles Value}" field="provisioningProfilesValue"
+                        description="xcode9 used as the value of the provisioningProfiles value field when signed">
+                        <f:textbox />
+                    </f:entry>
+                    
+                    
                 </f:optionalBlock>
             </f:entry>
         </f:advanced>
