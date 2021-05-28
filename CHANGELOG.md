@@ -5,6 +5,9 @@ Changelog
 
 See [GitHub releases](https://github.com/jenkinsci/xcode-plugin/releases)
 
+#### Version 2.0.15 (14th Mar 2021)
+-   ##### Moved information in the AppleWWDRCA.cer file from the local file system to credentials.
+
 #### Version 2.0.14 (14th Nov 2019)
 -   ##### Fix backward compatibility problem at Import Developer Profile.
 

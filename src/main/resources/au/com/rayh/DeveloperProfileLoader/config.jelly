@@ -36,58 +36,76 @@
 	]]>
 
     <!-- General build settings -->
-	<j:invokeStatic var="developerProfiles" className="au.com.rayh.DeveloperProfile" method="getAllProfiles"/>
-	<j:if test="${!empty(developerProfiles)}">
-            <f:entry title="${%Developer Profile}" description="${%Specify the developer profile to import into the keychain.}" field="developerProfiles"
-                help="/plugin/xcode-plugin/help/help-importDeveloperProfile.html" >
-                <select class="setting-input" name="developerProfileId">
-                    <j:forEach var="profile" items="${developerProfiles}">
-                        <f:option selected="${profile.getId()==instance.developerProfileId}" value="${profile.getId()}">${profile.getDescription()}</f:option>
+    <j:invokeStatic var="developerProfiles" className="au.com.rayh.DeveloperProfile" method="getAllProfiles"/>
+    <j:if test="${!empty(developerProfiles)}">
+        <f:entry title="${%Developer Profile}" description="${%Specify the developer profile to import into the keychain.}" field="developerProfiles"
+            help="/plugin/xcode-plugin/help/help-importDeveloperProfile.html" >
+            <select class="setting-input" name="developerProfileId">
+                <j:forEach var="profile" items="${developerProfiles}">
+                    <f:option selected="${profile.getId()==instance.developerProfileId}" value="${profile.getId()}">${profile.getDescription()}</f:option>
+                </j:forEach>
+            </select>
+        </f:entry>
+    </j:if>
+
+    <f:entry>
+        <f:optionalBlock inline="true" checked="${instance.importIntoExistingKeychain == true}" field="importIntoExistingKeychain" title="${%Import into existing Keychain}" help="/plugin/xcode-plugin/help/help-importIntoExistingKeychain.html">
+            <j:if test="${instance.keychainName!=null}">
+                <div class="alert alert-warning">
+                    ${%The 'If'Import into existing Keychain'is true, the certificate specified here will not be imported into the keychain.}
+                    ${%From now on, please move keychain information to 'Credentials' instead of 'Configure System' and use it.}
+                </div>
+            </j:if>
+            <j:set var="UUID" value="${descriptor.UUID}" />
+            <j:invokeStatic var="keychainPasswordAndPaths" className="au.com.rayh.KeychainPasswordAndPathImpl" method="getAllKeycainInfo"/>
+            <f:entry title="${%Target keychain}" description="${%The combination of path and password defined in 'Credentials' for unlocking the keychain that imports the developer profile.}" field="targetKeychains" help="/plugin/xcode-plugin/help/help-importKeychainId.html">
+                <select class="setting-input" name="keychainId" foo="${UID}" id="global-keychain-select-${UUID}" onchange="showOrHideAttributeInput('global-keychain-select-', '${UUID}')">
+                    <f:option selected="${instance.keychainId==null}" value="">${%none} (${%specify one below})</f:option>
+
+                    <j:forEach var="keychain" items="${keychainPasswordAndPaths}">
+                        <j:if test="${keychain.getId()==instance.keychainId}">
+                            <j:set var="displayCustomKeychainData" value="none" scope="parent" />
+                        </j:if>
+                        <f:option selected="${keychain.getId()==instance.keychainId}" value="${keychain.getId()}">${keychain.getDescription()}</f:option>
+                    </j:forEach>
+                </select>
+            </f:entry>
+
+            <f:nested>
+                <j:if test="${displayCustomKeychainData==null}">
+                    <j:set var="displayCustomKeychainData" value="block" />
+                </j:if>
+
+                <table id="${UUID}" style="display: ${displayCustomKeychainData}">
+                    <f:entry title="${%Keychain path}" field="keychainPath" description="${%Keychain path to import developer profile.}">
+                        <f:textbox />
+                    </f:entry>
+
+                    <f:entry title="${%Keychain password}" field="keychainPwd" description="${%Password to unlock keychain importing developer profile.}">
+                        <f:password />
+                    </f:entry>
+                </table>
+            </f:nested>
+
+        </f:optionalBlock>
+
+        <j:if test="${instance.importIntoExistingKeychain}">
+            <div class="alert alert-warning">
+                ${%If 'Import into existing Keychain' is true, the certificate specified here will not be imported into the keychain.}
+            </div>
+        </j:if>
+        <j:invokeStatic var="appleWWDRCACertificates" className="au.com.rayh.AppleWWDRCA" method="getAllCertificates"/>
+        <j:if test="${!empty(appleWWDRCACertificates)}">
+            <f:entry title="${%AppleWWDRCA}" description="${%Specify the AppleWWDRCA to import into the keychain.}" field="appleWWDRCACertificate"
+                help="/plugin/xcode-plugin/help/help-ImportAppleWWDRCAId.html" >
+                <select class="setting-input" name="appleWWDRCACertId">
+                    <j:forEach var="certificate" items="${appleWWDRCACertificates}">
+                        <f:option selected="${certificate.getId()==instance.appleWWDRCACertId}" value="${certificate.getId()}">${certificate.getDescription()}</f:option>
                     </j:forEach>
                 </select>
             </f:entry>
         </j:if>
 
-        <f:entry>
-            <f:optionalBlock inline="true" checked="${instance.importIntoExistingKeychain == true}" field="importIntoExistingKeychain" title="${%Import into existing Keychain}" help="/plugin/xcode-plugin/help/help-importIntoExistingKeychain.html">
-		        <j:if test="${instance.keychainName!=null}">
-                    <div class="alert alert-warning">
-                        ${%The 'Configure System' keychain information is used but this is a deprecated method.}
-                        ${%From now on, please move keychain information to 'Credentials' instead of 'Configure System' and use it.}
-                    </div>
-                </j:if>
-                <j:set var="UUID" value="${descriptor.UUID}" />
-		        <j:invokeStatic var="keychainPasswordAndPaths" className="au.com.rayh.KeychainPasswordAndPathImpl" method="getAllKeycainInfo"/>
-                <f:entry title="${%Target keychain}" description="${%The combination of path and password defined in 'Credentials' for unlocking the keychain that imports the developer profile.}" field="targetKeychains" help="/plugin/xcode-plugin/help/help-importKeychainId.html">
-                    <select class="setting-input" name="keychainId" foo="${UID}" id="global-keychain-select-${UUID}" onchange="showOrHideAttributeInput('global-keychain-select-', '${UUID}')">
-                        <f:option selected="${instance.keychainId==null}" value="">${%none} (${%specify one below})</f:option>
-
-                        <j:forEach var="keychain" items="${keychainPasswordAndPaths}">
-                            <j:if test="${keychain.getId()==instance.keychainId}">
-                                <j:set var="displayCustomKeychainData" value="none" scope="parent" />
-                            </j:if>
-                            <f:option selected="${keychain.getId()==instance.keychainId}" value="${keychain.getId()}">${keychain.getDescription()}</f:option>
-                        </j:forEach>
-                    </select>
-                </f:entry>
-
-                <f:nested>
-                    <j:if test="${displayCustomKeychainData==null}">
-                        <j:set var="displayCustomKeychainData" value="block" />
-                    </j:if>
-
-                    <table id="${UUID}" style="display: ${displayCustomKeychainData}">
-                        <f:entry title="${%Keychain path}" field="keychainPath" description="${%Keychain path to import developer profile.}">
-                            <f:textbox />
-                        </f:entry>
-
-                        <f:entry title="${%Keychain password}" field="keychainPwd" description="${%Password to unlock keychain importing developer profile.}">
-                            <f:password />
-                        </f:entry>
-                    </table>
-                </f:nested>
-
-	    </f:optionalBlock>
-	</f:entry>
+    </f:entry>
 
 </j:jelly>

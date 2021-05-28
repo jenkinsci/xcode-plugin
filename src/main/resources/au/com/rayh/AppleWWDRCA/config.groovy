@@ -1,4 +1,4 @@
-package au.com.rayh.DeveloperProfile
+package au.com.rayh.AppleWWDRCA
 
 import java.security.GeneralSecurityException
 import java.security.cert.CertificateException
@@ -7,11 +7,8 @@ f = namespace(lib.FormTagLib)
 st = namespace("jelly:stapler")
 
 def fileForm() {
-    f.entry(title:_("*.developerprofile File"), field:"image") {
+    f.entry(title:_("*.cer File"), field:"image") {
         raw("<input type=file name=image size=40 jsonAware=yes>")
-    }
-    f.entry(title:_("Password"), field:"password") {
-        f.password()
     }
 }
 
@@ -20,12 +17,11 @@ if ( img == null ) {
     fileForm()
 }
 else {
-    f.entry(title:_("Contents")) {
-        // show the certificates in the profile
+    f.entry(title:_("Contents")) { // show the certificates in the .cer file
         try {
             def certs = instance.certificates
             certs.each { c ->
-                boolean valid=true;
+                boolean valid = true;
                 try {
                     c.checkValidity();
                 }
@@ -39,17 +35,19 @@ else {
                         text(_("expired"));
                 }
             }
-            if (certs.isEmpty())
-                div(class:'error', _("There's no certificate in this profile"))
-        } catch (IOException e) {
-            div(class:'error', _("Not a developer profile or a wrong password:") + "${e.message}")
-        } catch (GeneralSecurityException e) {
-            div(class:'error', _("Not a developer profile or a wrong password:") + "${e.message}")
+            if ( certs.isEmpty() )
+                div(class:'error', _("There's no certificate in this .cer file"));
+        }
+        catch ( IOException e ) {
+            div(class:'error', _("Not a valid certificates file:") + "${e.message}")
+        }
+        catch ( GeneralSecurityException e ) {
+            div(class:'error', _("Not a valid certificates file:") + "${e.message}")
         }
     }
-    f.optionalBlock(title:_("Re-upload *.developerprofile File"), inline:true) {
+    f.optionalBlock( title:_("Re-upload *.cer File"), inline:true ) {
         fileForm()
     }
 }
 
-st.include(page: "id-and-description", class: descriptor.clazz)
+st.include(page:"id-and-description", class:descriptor.clazz)

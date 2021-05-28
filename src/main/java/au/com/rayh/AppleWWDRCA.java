@@ -4,20 +4,14 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.Extension;
 import hudson.security.ACL;
-import hudson.util.Secret;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.*;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -35,22 +29,16 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 
 /**
- * Apple developer profile, which consists of any number of PKCS12 of the private key
- * and the certificate for code signing, and mobile provisioning profiles.
+ * Apple Worldwide Developer Relations Certification Authority, which consists of any number of
+ * certificate for prepare certificate for code signing, and mobile provisioning profiles.
  *
- * @author Kohsuke Kawaguchi
+ * @author Kazuhide Takahashi
  */
-public class DeveloperProfile extends BaseStandardCredentials {
-    /**
-     * Password of the PKCS12 files inside the profile.
-     */
-    private Secret password;
-
+public class AppleWWDRCA extends BaseStandardCredentials {
     @DataBoundConstructor
-    public DeveloperProfile(@CheckForNull CredentialsScope scope, @CheckForNull String id, @CheckForNull String description,
-            Secret password, FileItem image) throws IOException {
+    public AppleWWDRCA(@CheckForNull CredentialsScope scope, @CheckForNull String id, @CheckForNull String description,
+            FileItem image) throws IOException {
         super(scope, id, description);
-        this.password = password;
 
         if ( image != null ) {
             // for added secrecy, store this in the confidential store
@@ -58,18 +46,9 @@ public class DeveloperProfile extends BaseStandardCredentials {
         }
     }
 
-    @Deprecated
-    public DeveloperProfile(String id, String description, Secret password, FileItem image) throws IOException {
-        this(CredentialsScope.GLOBAL, id, description, password, image);
-    }
-
-    public Secret getPassword() {
-        return password;
-    }
-
     /**
-     * Retrieves the PKCS12 byte image.
-     * @return PKCS12 byte image
+     * Retrieves the AppleWWDRCA.cer file image.
+     * @return AppleWWDRCA.cer file image
      * @throws IOException file I/O
      */
     public byte[] getImage() throws IOException {
@@ -77,33 +56,24 @@ public class DeveloperProfile extends BaseStandardCredentials {
     }
 
     /**
-     * Obtains the certificates in this developer profile.
+     * Obtains the certificates in this AppleWWDRCA.cer file.
      * @return X509Certificates
      * @throws IOException file I/O
      * @throws GeneralSecurityException Certificate error
      */
     public @Nonnull List<X509Certificate> getCertificates() throws IOException, GeneralSecurityException {
-        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(getImage()))) {
-            List<X509Certificate> r = new ArrayList<>();
-
-            ZipEntry ze;
-            while ( (ze = zip.getNextEntry()) != null ) {
-                if ( ze.getName().endsWith(".p12") ) {
-                    KeyStore ks = KeyStore.getInstance("pkcs12");
-                    ks.load(zip, password.getPlainText().toCharArray());
-                    Enumeration<String> en = ks.aliases();
-                    while ( en.hasMoreElements() ) {
-                        String s = en.nextElement();
-                        Certificate c = ks.getCertificate(s);
-                        if ( c instanceof X509Certificate ) {
-                            r.add((X509Certificate) c);
-                        }
-                    }
-                }
+        List<X509Certificate> r = new ArrayList<>();
+        try ( InputStream inputStream = new ByteArrayInputStream(getImage()) ) {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Collection c = certificateFactory.generateCertificates(inputStream);
+            Iterator i = c.iterator();
+            while ( i.hasNext() ) {
+                X509Certificate cert = (X509Certificate) i.next();
+                r.add((X509Certificate)cert);
             }
-            return r;
         }
-    }
+        return r;
+     }
 
     public String getDisplayNameOf(X509Certificate p) {
         String name = p.getSubjectDN().getName();
@@ -124,13 +94,13 @@ public class DeveloperProfile extends BaseStandardCredentials {
     public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
         @Override
         public String getDisplayName() {
-            return "Apple Developer Profile";
+            return "Apple Worldwide Developer Relations Certification Authority";
         }
     }
 
     static class ConfidentialKeyImpl extends ConfidentialKey {
         ConfidentialKeyImpl(String id) {
-            super(DeveloperProfile.class.getName()+"."+id);
+            super(AppleWWDRCA.class.getName()+"."+id);
         }
 
         public void store(FileItem submitted) throws IOException {
@@ -142,7 +112,7 @@ public class DeveloperProfile extends BaseStandardCredentials {
         }
     }
 
-    public static List<DeveloperProfile> getAllProfiles() {
-	    return CredentialsProvider.lookupCredentials(DeveloperProfile.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.<DomainRequirement>emptyList());
+    public static List<AppleWWDRCA> getAllCertificates() {
+	    return CredentialsProvider.lookupCredentials(AppleWWDRCA.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.<DomainRequirement>emptyList());
     }
 }
