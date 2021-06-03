@@ -27,7 +27,6 @@ package au.com.rayh;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import hudson.Extension;
 import org.jenkinsci.plugins.pipeline.modeldefinition.model.CredentialsBindingHandler;
-import org.jenkinsci.plugins.credentialsbinding.MultiBinding;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -37,16 +36,6 @@ import java.util.Map;
 
 @Extension
 public class XcodeDeclarativeCredentialsHandler extends CredentialsBindingHandler<KeychainPasswordAndPath> {
-
-    @Nonnull
-    @Override
-    public List<MultiBinding<KeychainPasswordAndPath>> toBindings(String varName, String credentialsId) {
-        return Collections.singletonList((MultiBinding<KeychainPasswordAndPath>)new KeychainPasswordAndPathBinding(
-                varName,
-                null,
-                null,
-                credentialsId));
-    }
 
     @Nonnull
     @Override
