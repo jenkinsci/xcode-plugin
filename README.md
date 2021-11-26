@@ -19,9 +19,9 @@ A problem, An idea ?
 *Please use our tasks and issues tracker to report bugs, improvements or
 new feature.*
 
--   [Report a bug](https://issues.jenkins-ci.org/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=1)
--   [Ask for a new feature](https://issues.jenkins-ci.org/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=2)
--   [Ask for an improvement of an existing feature](https://issues.jenkins-ci.org/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=4)
+-   [Report a bug](https://issues.jenkins.io/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=1)
+-   [Ask for a new feature](https://issues.jenkins.io/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=2)
+-   [Ask for an improvement of an existing feature](https://issues.jenkins.io/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=4)
 
 Also if you want to propose some code change using a Github pull
 request, please open also a Jira issue. It is easier for developers to
