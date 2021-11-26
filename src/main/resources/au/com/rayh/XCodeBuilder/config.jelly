@@ -68,21 +68,21 @@
             </f:nested>
         </f:entry>
 
-	<j:invokeStatic var="installations" className="hudson.plugins.xcode.XcodeInstallation" method="allInstallations"/>
-	<j:if test="${!empty(installations)}">
-	    <f:entry title="${%Xcode Tools Version}" field="xcodeToolsVersion" description="${%Xcode Tools version.} (${%if you need to override System Default})" help="/plugin/xcode-plugin/help/help-xcodeToolsVersion.html">
-		<select class="setting-input" name="xcodeName">
-		    <option value="">${%System Default}</option>
-		    <j:forEach var="inst" items="${installations}">
-			<f:option selected="${inst.name==instance.xcodeName}" value="${inst.name}">${inst.name}</f:option>
-		    </j:forEach>
-		</select>
-	    </f:entry>
-	</j:if>
+        <j:invokeStatic var="installations" className="hudson.plugins.xcode.XcodeInstallation" method="allInstallations"/>
+        <j:if test="${!empty(installations)}">
+            <f:entry title="${%Xcode Tools Version}" field="xcodeToolsVersion" description="${%Xcode Tools version.} (${%if you need to override System Default})" help="/plugin/xcode-plugin/help/help-xcodeToolsVersion.html">
+            <select class="setting-input" name="xcodeName">
+                <option value="">${%System Default}</option>
+                <j:forEach var="inst" items="${installations}">
+                <f:option selected="${inst.name==instance.xcodeName}" value="${inst.name}">${inst.name}</f:option>
+                </j:forEach>
+            </select>
+            </f:entry>
+        </j:if>
 
-	<f:entry title="${%Use Legacy Build System?}" field="useLegacyBuildSystem" description="${%Use the old 'Legacy Build System' instead of 'New Build System' of Xcode 9 and later.}">
-	    <f:checkbox title="${%Yes}" />
-	</f:entry>
+        <f:entry title="${%Use Legacy Build System?}" field="useLegacyBuildSystem" description="${%Use the old 'Legacy Build System' instead of 'New Build System' of Xcode 9 and later.}">
+            <f:checkbox title="${%Yes}" />
+        </f:entry>
 
         <f:entry title="${%Target}" field="target" description="${%Leave empty for all targets}">
             <f:textbox />
@@ -104,11 +104,11 @@
 
             <f:entry title="${%No Console Log?}" field="noConsoleLog" description="${%Checking this option will not log xcode build output to console output.}">
 		            <f:checkbox title="${%Yes}" />
-		        </f:entry>
-		        <f:entry title="${%Logfile Output directory}" field="logfileOutputDirectory"
+            </f:entry>
+            <f:entry title="${%Logfile Output directory}" field="logfileOutputDirectory"
                 description="${%Leave empty for Log to project-directory/logs. The output directory for the separate logfile, relative to the project-directory.}">
-		            <f:textbox />
-		        </f:entry>
+                <f:textbox />
+            </f:entry>
 
             <f:entry title="${%ResultBundlePath}" field="resultBundlePath"
                 description="${%Leave empty, it will not output a test result and will not analyze the test results. relative to the project-directory.}">

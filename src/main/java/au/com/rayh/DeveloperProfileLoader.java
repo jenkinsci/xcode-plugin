@@ -72,13 +72,16 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
     @CheckForNull
     private Secret keychainPwd;
     @CheckForNull
+    private String appleWWDRCACertId;
+
+    @CheckForNull
     public String getProfileId() {
         return profileId;
     }
 
     @DataBoundSetter
-    public void setProfileId(String developerProfileId) {
-        this.profileId = developerProfileId;
+    public void setProfileId(String profileId) {
+        this.profileId = profileId;
     }
 
     public Boolean getImportIntoExistingKeychain() {
@@ -132,6 +135,17 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
         this.keychainPwd = keychainPwd;
     }
 
+    /**
+     * @since 2.0.15
+     */
+    @CheckForNull
+    public String getAppleWWDRCACertId() { return appleWWDRCACertId; }
+
+    @DataBoundSetter
+    public void setAppleWWDRCACertId(String appleWWDRCACertId) {
+        this.appleWWDRCACertId = appleWWDRCACertId;
+    }
+
     @DataBoundConstructor
     public DeveloperProfileLoader() {
     }
@@ -139,28 +153,29 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
     @Deprecated
     public DeveloperProfileLoader(String profileId) {
         this();
-	this.profileId = profileId;
+	    this.profileId = profileId;
     }
 
     @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, @Nonnull Launcher launcher, @Nonnull TaskListener listener) throws InterruptedException, IOException {
-	EnvVars envs = run.getEnvironment(listener);
-	String _profileId = envs.expand(this.profileId);
+        EnvVars envs = run.getEnvironment(listener);
+        String _profileId = envs.expand(this.profileId);
         String _keychainId = envs.expand(this.keychainId);
-	String _keychainName = envs.expand(this.keychainName);
-	Boolean _importIntoExistingKeychain = this.importIntoExistingKeychain;
+        String _keychainName = envs.expand(this.keychainName);
+        Boolean _importIntoExistingKeychain = this.importIntoExistingKeychain;
+        String _appleWWDRCACertId = envs.expand(this.appleWWDRCACertId);
         DeveloperProfile dp = getProfile(run.getParent(), _profileId);
         if ( dp == null )
             throw new AbortException(Messages.DeveloperProfile_NoDeveloperProfileConfigured());
 
         String _keychainPath;
         String _keychainPwd;
-        if ( BooleanUtils.isTrue(_importIntoExistingKeychain)) {
+        if ( BooleanUtils.isTrue(_importIntoExistingKeychain) ) {
             if ( StringUtils.isNotEmpty(_keychainName) ) {
                 // for backward compatibility
                 listener.getLogger().println(Messages.XCodeBuilder_UseDeprecatedKeychainInfo());
                 Keychain keychain = getKeychain(_keychainName);
-                if (keychain == null) {
+                if ( keychain == null ) {
                     throw new AbortException(Messages.DeveloperProfileLoader_NoKeychainInfoConfigured());
                 }
                 else {
@@ -193,16 +208,16 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
         else {
             // Use temporary keychain with random UUID nasme.
             _keychainPath = "jenkins-" + run.getParent().getFullName().replace('/', '-');
-	    _keychainPwd = UUID.randomUUID().toString();
-	    _importIntoExistingKeychain = Boolean.valueOf(false);
+            _keychainPwd = UUID.randomUUID().toString();
+	        _importIntoExistingKeychain = Boolean.valueOf(false);
         }
 
-        // Note: keychain are usualy suffixed with .keychain. If we change we should probably clean up the ones we created
+        // Note: keychain are usually suffixed with .keychain. If we change we should probably clean up the ones we created
 
         ArgumentListBuilder args;
 
         if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
-	    // if the key chain is already present, delete it and start fresh
+	        // if the key chain is already present, delete it and start fresh
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             args = new ArgumentListBuilder("security", "delete-keychain", _keychainPath);
             launcher.launch().cmds(args).stdout(out).join();
@@ -211,25 +226,25 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
             args.add("-p").addMasked(_keychainPwd);
             args.add(_keychainPath);
             invoke(launcher, listener, args, "Failed to create a keychain");
-	}
+	    }
 
         args = new ArgumentListBuilder("security", "unlock-keychain");
         args.add("-p").addMasked(_keychainPwd);
         args.add(_keychainPath);
         invoke(launcher, listener, args, "Failed to unlock keychain");
 
-	if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
+	    if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
             args = new ArgumentListBuilder("security", "list-keychains");
-	    args.add("-d").add("user");
-	    args.add("-s").add("login.keychain");
+            args.add("-d").add("user");
+            args.add("-s").add("login.keychain");
             args.add(_keychainPath);
             invoke(launcher, listener, args, "Failed to set keychain search path");
-	}
+	    }
 
         final FilePath secret = getSecretDir(workspace, _keychainPwd);
-	final byte[] dpImage = dp.getImage();
-	if ( dpImage == null )
-	    throw new AbortException(Messages.DeveloperProfile_NoDeveloperProfileConfigured());
+        final byte[] dpImage = dp.getImage();
+        if ( dpImage == null )
+            throw new AbortException(Messages.DeveloperProfile_NoDeveloperProfileConfigured());
         secret.unzipFrom(new ByteArrayInputStream(dpImage));
 
         // import identities
@@ -240,44 +255,44 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
             args.add("-T", "/usr/bin/codesign");
             args.add("-T", "/usr/bin/productsign");
             args.add(_keychainPath);
-            invoke(launcher, listener, args, "Failed to import identity " + id);
+            invoke(launcher, listener, args, Messages.DeveloperProfileLoader_FailedToImportIdentity(id));
         }
 
         {
             // display keychain info for potential troubleshooting
             args = new ArgumentListBuilder("security", "show-keychain-info");
             args.add(_keychainPath);
-            ByteArrayOutputStream output = invoke(launcher, listener, args, "Failed to show keychain info");
+            ByteArrayOutputStream output = invoke(launcher, listener, args, Messages.DeveloperProfileLoader_FailedToShowKeychainInfo());
             listener.getLogger().write(output.toByteArray());
         }
 
-	if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
+	    if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
             args = new ArgumentListBuilder("security", "set-key-partition-list");
             args.add("-S").add("apple-tool:,apple:");
             args.add("-s").add("-k").addMasked(_keychainPwd);
             args.add(_keychainPath);
-            invoke(launcher, listener, args, "Failed to set key partition list to keychain");
+            invoke(launcher, listener, args, Messages.DeveloperProfileLoader_FailedToSetKeyPartitionListToKeychain());
         }
 
-	{
-	    // If default keychain is not set, set the specified keychain to default keychain.
-	    args = new ArgumentListBuilder("security", "default-keychain");
-	    ByteArrayOutputStream output = new ByteArrayOutputStream();
-	    if ( launcher.launch().cmds(args).stdout(output).join() != 0 ) {
-		listener.getLogger().write(output.toByteArray());
-		String strResult = new String(output.toByteArray(), "UTF-8");
-	        if ( strResult.contains("A default keychain could not be found.") ) {
-		    args = new ArgumentListBuilder("security", "default-keychain");
-		    args.add("-d").add("user");
-		    args.add("-s").add(_keychainPath);
-		    invoke(launcher, listener, args, "Failed to set default keychain");
-		}
+        {
+            // If default keychain is not set, set the specified keychain to default keychain.
+            args = new ArgumentListBuilder("security", "default-keychain");
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            if ( launcher.launch().cmds(args).stdout(output).join() != 0 ) {
+                listener.getLogger().write(output.toByteArray());
+                String strResult = new String(output.toByteArray(), "UTF-8");
+                if ( strResult.contains("A default keychain could not be found.") ) {
+                    args = new ArgumentListBuilder("security", "default-keychain");
+                    args.add("-d").add("user");
+                    args.add("-s").add(_keychainPath);
+                    invoke(launcher, listener, args, Messages.DeveloperProfileLoader_FailedToSetDefaultKeychain());
+                }
+	        }
 	    }
-	}
 
-	if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
-	    importAppleCert(launcher, listener, workspace, _keychainPath);
-	}
+        if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
+            importAppleCert(run.getParent(), launcher, listener, workspace, _keychainPath, secret, _appleWWDRCACertId);
+        }
 
         // copy provisioning profiles
         VirtualChannel ch = launcher.getChannel();
@@ -294,7 +309,6 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         perform(build, build.getWorkspace(), launcher, listener);
-
         return true;
     }
 
@@ -332,22 +346,41 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
                 CredentialsMatchers.withId(keychainId));
     }
 
-    public void importAppleCert(Launcher launcher, TaskListener listener, FilePath workspace, String keychainPath) throws IOException, InterruptedException {
-	ByteArrayOutputStream out = new ByteArrayOutputStream();
-	FilePath homeFolder = workspace.getHomeDirectory(workspace.getChannel());
-	String homePath = homeFolder.getRemote();
-	String cert = homePath + "/AppleWWDRCA.cer";
-	launcher
-	    .launch()
-	    .cmds("security", "import", cert, "-k", keychainPath)
-	    .stdout(out)
-	    .join();
-	listener.getLogger().write(out.toByteArray());
+    public void importAppleCert(Item context, Launcher launcher, TaskListener listener, FilePath workspace,
+                                String keychainPath, FilePath secret, String appleWWDRCACertId) throws IOException, InterruptedException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        FilePath homeFolder = workspace.getHomeDirectory(workspace.getChannel());
+        String cert = null;
+        if ( !appleWWDRCACertId.isEmpty() ) {
+            AppleWWDRCA cr_cert = getAppleWWDRCA(context, appleWWDRCACertId);
+            if ( cr_cert == null ) {
+                listener.getLogger().println(Messages.DeveloperProfileLoader_AppleWWDRCAWasNotFoundInCredentials());
+            }
+            else {
+                listener.getLogger().println(Messages.DeveloperProfileLoader_ImportAppleWWDRCAFromCredentials());
+                secret.child("AppleWWDRCA.cer").write().write(cr_cert.getImage());
+                cert = secret.child("AppleWWDRCA.cer").getRemote();
+            }
+        }
+        else if ( homeFolder.child("AppleWWDRCA.cer").exists() ) {
+            listener.getLogger().println(Messages.DeveloperProfileLoader_ImportAppleWWDRCAFromLocalFilesystem());
+            cert = homeFolder.child("AppleWWDRCA.cer").getRemote();
+        }
+        else {
+            listener.getLogger().println(Messages.DeveloperProfileLoader_AppleWWDRCAWasNotFoundAnywhere());
+            return;
+        }
+        launcher
+            .launch()
+            .cmds("security", "import", cert, "-k", keychainPath)
+            .stdout(out)
+            .join();
+    	listener.getLogger().write(out.toByteArray());
     }
 
     private ByteArrayOutputStream invoke(Launcher launcher, TaskListener listener, ArgumentListBuilder args, String errorMessage) throws IOException, InterruptedException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        if (launcher.launch().cmds(args).stdout(output).join()!=0) {
+        if ( launcher.launch().cmds(args).stdout(output).join() != 0 ) {
             listener.getLogger().write(output.toByteArray());
             throw new AbortException(errorMessage);
         }
@@ -368,16 +401,23 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
                 CredentialsMatchers.withId(profileId));
     }
 
+    public AppleWWDRCA getAppleWWDRCA(Item context, String appleWWDRCACertId) {
+        return (AppleWWDRCA)CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(AppleWWDRCA.class, context,
+                        ACL.SYSTEM, Collections.EMPTY_LIST),
+                CredentialsMatchers.withId(appleWWDRCACertId));
+    }
+
     @Extension
     @Symbol("importDeveloperProfile")
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-	GlobalConfigurationImpl globalConfiguration;
+	    GlobalConfigurationImpl globalConfiguration;
 
         @SuppressFBWarnings("UWF_UNWRITTEN_FIELD")
         @Inject
         void setGlobalConfiguration(GlobalConfigurationImpl c) {
             this.globalConfiguration = c;
-	}
+	    }
 
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
@@ -393,7 +433,7 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
             List<DeveloperProfile> profiles = CredentialsProvider
                     .lookupCredentials(DeveloperProfile.class, context, null);
             ListBoxModel r = new ListBoxModel();
-            for (DeveloperProfile p : profiles) {
+            for ( DeveloperProfile p : profiles ) {
                 r.add(p.getDescription(), p.getId());
             }
             return r;
@@ -414,18 +454,18 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckKeychainPath(@QueryParameter String value, @QueryParameter String keychainName, @QueryParameter Boolean importIntoExistingKeychain) {
+        public FormValidation doCheckKeychainPath(@QueryParameter String value, @QueryParameter String keychainId, @QueryParameter Boolean importIntoExistingKeychain) {
             if ( BooleanUtils.isTrue(importIntoExistingKeychain) ) {
-                if ( StringUtils.isEmpty(keychainName) && StringUtils.isEmpty(value) ) {
+                if ( StringUtils.isEmpty(keychainId) && StringUtils.isEmpty(value) ) {
                     return FormValidation.error(Messages.DeveloperProfileLoader_MustSpecifyKeychainPath());
                 }
             }
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckKeychainPwd(@QueryParameter Secret value, @QueryParameter String keychainName, @QueryParameter Boolean importIntoExistingKeychain) {
+        public FormValidation doCheckKeychainPwd(@QueryParameter Secret value, @QueryParameter String keychainId, @QueryParameter Boolean importIntoExistingKeychain) {
             if ( BooleanUtils.isTrue(importIntoExistingKeychain) ) {
-                if ( StringUtils.isEmpty(keychainName) && StringUtils.isEmpty(Secret.toString(value)) ) {
+                if ( StringUtils.isEmpty(keychainId) && StringUtils.isEmpty(Secret.toString(value)) ) {
                     return FormValidation.error(Messages.DeveloperProfileLoader_MustSpecifyKeychainPwd());
                 }
             }
