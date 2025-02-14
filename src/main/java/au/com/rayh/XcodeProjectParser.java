@@ -1,16 +1,10 @@
 package au.com.rayh;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.text.ParseException;
-import java.io.ByteArrayInputStream;
 import hudson.FilePath;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -27,9 +21,7 @@ import org.xml.sax.SAXException;
 
 import com.dd.plist.NSDictionary; 
 import com.dd.plist.NSArray;
-import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
-import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException; 
 import com.dd.plist.PropertyListParser; 
 

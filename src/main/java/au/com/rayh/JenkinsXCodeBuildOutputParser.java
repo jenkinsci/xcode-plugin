@@ -37,8 +37,6 @@ import java.io.BufferedOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
 
 import org.apache.commons.lang.StringUtils;
 

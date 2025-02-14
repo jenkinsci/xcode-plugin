@@ -1,7 +1,6 @@
 package au.com.rayh;
 
 import org.junit.Assert;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import java.util.HashMap;
 import java.util.List;

@@ -1,12 +1,6 @@
 package au.com.rayh;
 
 import com.dd.plist.NSDictionary; 
-import com.dd.plist.NSArray;
-import com.dd.plist.NSNumber;
-import com.dd.plist.NSObject;
-import com.dd.plist.NSString;
-import com.dd.plist.PropertyListFormatException; 
-import com.dd.plist.PropertyListParser; 
 
 public class BuildConfiguration {
   public String uuid;

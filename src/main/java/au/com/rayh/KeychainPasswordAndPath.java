@@ -31,8 +31,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 import hudson.util.Secret;
 
-import java.io.IOException;
-
 /**
  * Credentials that have an ID, description and macOS Keychain password and path.
  *

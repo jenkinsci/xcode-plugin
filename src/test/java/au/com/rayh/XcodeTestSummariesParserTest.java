@@ -1,10 +1,7 @@
 package au.com.rayh;
 
 import org.junit.Assert;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
-import java.util.HashMap;
-import java.util.List;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;

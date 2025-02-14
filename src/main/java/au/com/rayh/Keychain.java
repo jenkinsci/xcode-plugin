@@ -1,7 +1,6 @@
 package au.com.rayh;
 
 import hudson.util.Secret;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 

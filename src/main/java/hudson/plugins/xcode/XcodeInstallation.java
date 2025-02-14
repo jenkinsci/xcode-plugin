@@ -2,7 +2,6 @@ package hudson.plugins.xcode;
 
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.init.Initializer;
 import hudson.model.EnvironmentSpecific;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -20,13 +19,8 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
-
-import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
-import java.util.logging.Level;
 
 /**
  * Information about Xcode installation.
