@@ -16,7 +16,7 @@ import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +111,7 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+        public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
             setInstallations(req.bindJSONToList(clazz, json.get("tool")).toArray(new XcodeInstallation[0]));
             save();
             return true;

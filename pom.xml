@@ -28,7 +28,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.41</version>
+    <version>5.17</version>
     <relativePath />
   </parent>
   <artifactId>xcode-plugin</artifactId>
@@ -44,28 +44,6 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-  <developers>
-    <developer>
-      <id>rayhilton</id>
-      <name>Ray Yamamoto Hilton</name>
-      <email>ray.hilton@gmail.com</email>
-    </developer>
-    <developer>
-      <id>aheritier</id>
-      <name>Arnaud Heritier</name>
-      <email>aheritier@apache.org</email>
-    </developer>
-    <developer>
-      <id>lacostej</id>
-      <name>Jerome Lacoste</name>
-      <email>jerome.lacoste@gmail.com</email>
-    </developer>
-    <developer>
-      <id>kazuhidet</id>
-      <name>Kazuhide Takahashi</name>
-      <email>kazuhide.t@linux-powered.com</email>
-    </developer>
-  </developers>
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
@@ -88,8 +66,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.319.x</artifactId>
-        <version>1466.v85a_616ea_b_87c </version>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
+        <version>4948.v2f88b_118dd7b_ </version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -139,14 +117,15 @@
     <dependency>
       <groupId>io.jenkins.plugins</groupId>
       <artifactId>jaxb</artifactId>
-      <version>2.3.6-1</version>
     </dependency>
   </dependencies>
   <properties>
     <revision>2.0.17</revision>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/xcode-plugin</gitHubRepo>
-    <jenkins.version>2.319.1</jenkins.version>
+    <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
+    <jenkins.baseline>2.492</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
   </properties>
   <build>
     <plugins>
