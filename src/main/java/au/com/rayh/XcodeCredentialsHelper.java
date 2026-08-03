@@ -6,7 +6,7 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import hudson.model.ItemGroup;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import java.util.Collections;

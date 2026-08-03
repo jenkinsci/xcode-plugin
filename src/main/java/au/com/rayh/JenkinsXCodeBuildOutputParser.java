@@ -40,7 +40,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
