@@ -70,16 +70,6 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         return getHome() + "/usr/bin/xcodebuild";
     }
 
-    private static XcodeInstallation[] getInstallations(DescriptorImpl descriptor) {
-        XcodeInstallation[] installations = null;
-        try {
-            installations = descriptor.getInstallations();
-        } catch (NullPointerException e) {
-            installations = new XcodeInstallation[0];
-        }
-        return installations;
-    }
-
     public XcodeInstallation forNode(Node node, TaskListener log) throws IOException, InterruptedException {
         return new XcodeInstallation(getName(), translateFor(node, log), Collections.<ToolProperty<?>>emptyList());
     }

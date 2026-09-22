@@ -469,7 +469,6 @@ public class ExportIpa extends Builder implements SimpleBuildStep {
         _perform(build, filePath, launcher, build.getEnvironment(listener), listener);
     }
 
-    @SuppressFBWarnings("DM_DEFAULT_ENCODING")
     private boolean _perform(Run<?,?> build, FilePath filePath, Launcher launcher, EnvVars envs, TaskListener listener) throws InterruptedException, IOException {
 	XCodeBuilder builder = new XCodeBuilder(true, false, true, null, false, false, null,
                 null, null, xcodeProjectPath, xcodeProjectFile, null,
