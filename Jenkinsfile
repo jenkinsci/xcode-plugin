@@ -1,1 +1,1 @@
-buildPlugin(platforms: ['linux'])
+buildPlugin(platforms: ['linux', jdk: 21])
