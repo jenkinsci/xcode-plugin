@@ -2,7 +2,7 @@ package au.com.rayh;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by Kazuhide Takahashi on 5/9/14.
