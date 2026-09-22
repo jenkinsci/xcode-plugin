@@ -23,17 +23,7 @@
   ~ THE SOFTWARE.
   -->
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:html="jelly:html">
-    <![CDATA[
-		<script type="text/javascript">
-		<!--
-			var showOrHideAttributeInput = function(prefix, uuid) {
-				var defaultChosen = (document.getElementById(prefix + uuid).selectedIndex == 0);
-
-				document.getElementById("" + uuid).style.display = defaultChosen ? "block" : "none";
-			};
-		-->
-		</script>
-	]]>
+    <st:adjunct includes="au.com.rayh.show-hide-attr-input"/>
 
     <!-- General build settings -->
 	<j:invokeStatic var="developerProfiles" className="au.com.rayh.DeveloperProfile" method="getAllProfiles"/>
@@ -59,7 +49,8 @@
                 <j:set var="UUID" value="${descriptor.UUID}" />
 		        <j:invokeStatic var="keychainPasswordAndPaths" className="au.com.rayh.KeychainPasswordAndPathImpl" method="getAllKeycainInfo"/>
                 <f:entry title="${%Target keychain}" description="${%The combination of path and password defined in 'Credentials' for unlocking the keychain that imports the developer profile.}" field="targetKeychains" help="/plugin/xcode-plugin/help/help-importKeychainId.html">
-                    <select class="setting-input" name="keychainId" foo="${UID}" id="global-keychain-select-${UUID}" onchange="showOrHideAttributeInput('global-keychain-select-', '${UUID}')">
+                    <select class="setting-input xcode-show-hide-attr-input" name="keychainId" foo="${UID}" id="global-keychain-select-${UUID}"
+                            data-prefix="global-keychain-select-" data-uuid="${UUID}">
                         <f:option selected="${instance.keychainId==null}" value="">${%none} (${%specify one below})</f:option>
 
                         <j:forEach var="keychain" items="${keychainPasswordAndPaths}">
