@@ -55,7 +55,6 @@ public class TestCase {
     public TestCase() {
     }
 
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
     public TestCase(String classname, String name) {
         this.classname = classname;
         this.name = name;

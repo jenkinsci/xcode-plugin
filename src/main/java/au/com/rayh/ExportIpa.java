@@ -513,7 +513,6 @@ public class ExportIpa extends Builder implements SimpleBuildStep {
             load();
         }
 
-        @SuppressFBWarnings("UWF_UNWRITTEN_FIELD")
         @Inject
         void setGlobalConfiguration(GlobalConfigurationImpl c) {
             this.globalConfiguration = c;

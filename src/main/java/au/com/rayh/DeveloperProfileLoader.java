@@ -373,7 +373,6 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 	GlobalConfigurationImpl globalConfiguration;
 
-        @SuppressFBWarnings("UWF_UNWRITTEN_FIELD")
         @Inject
         void setGlobalConfiguration(GlobalConfigurationImpl c) {
             this.globalConfiguration = c;
