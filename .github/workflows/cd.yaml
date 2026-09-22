@@ -1,61 +1,54 @@
 # Note: additional setup is required, see https://www.jenkins.io/redirect/continuous-delivery-of-plugins
-
+#
+# Please find additional hints for individual trigger use case
+# configuration options inline this script below.
+#
+---
 name: cd
 on:
   workflow_dispatch:
+    inputs:
+      validate_only:
+        required: false
+        type: boolean
+        description: |
+          Run validation with release drafter only
+          → Skip the release job
+        # Note: Change this default to true,
+        #       if the checkbox should be checked by default.
+        default: false
+  # If you don't want any automatic trigger in general, then
+  # the following check_run trigger lines should all be commented.
+  # Note: Consider the use case #2 config for 'validate_only' below
+  #       as an alternative option!
   check_run:
     types:
       - completed
 
+permissions:
+  checks: read
+  contents: write
+
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    outputs:
-      should_release: ${{ steps.verify-ci-status.outputs.result == 'success' && steps.interesting-categories.outputs.interesting == 'true' }}
-    steps:
-      - name: Verify CI status
-        uses: jenkins-infra/verify-ci-status-action@v1.2.2
-        id: verify-ci-status
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          output_result: true
-
-      - name: Release Drafter
-        uses: release-drafter/release-drafter@v5
-        if: steps.verify-ci-status.outputs.result == 'success'
-        with:
-          name: next
-          tag: next
-          version: next
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check interesting categories
-        uses: jenkins-infra/interesting-category-action@v1.2.1
-        id: interesting-categories
-        if: steps.verify-ci-status.outputs.result == 'success'
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release:
-    runs-on: ubuntu-latest
-    needs: [validate]
-    if: needs.validate.outputs.should_release == 'true'
-    steps:
-    - name: Check out
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-
-    - name: Set up JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: 21
-
-    - name: Release
-      uses: jenkins-infra/jenkins-maven-cd-action@v1.3.3
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-        MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
+  maven-cd:
+    uses: jenkins-infra/github-reusable-workflows/.github/workflows/maven-cd.yml@c2470861b1ad94810dc0d207b011e0b57bb91bbb # v1
+    with:
+      # Comment / uncomment the validate_only config appropriate to your preference:
+      #
+      # Use case #1 (automatic release):
+      #   - Let any successful Jenkins build trigger another release,
+      #     if there are merged pull requests of interest
+      #   - Perform a validation only run with drafting a release note,
+      #     if manually triggered AND inputs.validate_only has been checked.
+      #
+      validate_only: ${{ inputs.validate_only == true }}
+      #
+      # Alternative use case #2 (no automatic release):
+      #   - Same as use case #1 - but:
+      #     - Let any check_run trigger a validate_only run.
+      #       => enforce the release job to be skipped.
+      #
+      #validate_only: ${{ inputs.validate_only == true || github.event_name == 'check_run' }}
+    secrets:
+      MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+      MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
