@@ -38,7 +38,6 @@ public class TestFailure {
     @XmlAttribute
     String message;
     
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
     @XmlAttribute
     String type = "Failure";
     

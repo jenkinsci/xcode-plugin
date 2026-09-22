@@ -78,7 +78,6 @@ import com.dd.plist.PropertyListParser;
 /**
  * @author Ray Hilton
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
     private static final int SIGTERM = 143;
