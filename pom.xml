@@ -150,6 +150,7 @@
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/xcode-plugin</gitHubRepo>
     <jenkins.version>2.492.1</jenkins.version>
+    <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
   </properties>
   <build>
     <plugins>
