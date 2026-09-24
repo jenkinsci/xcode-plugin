@@ -1,28 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ The MIT License
-  ~
-  ~ Copyright (c) 2011 Ray Yamamoto Hilton
-  ~
-  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
-  ~ of this software and associated documentation files (the "Software"), to deal
-  ~ in the Software without restriction, including without limitation the rights
-  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  ~ copies of the Software, and to permit persons to whom the Software is
-  ~ furnished to do so, subject to the following conditions:
-  ~
-  ~ The above copyright notice and this permission notice shall be included in
-  ~ all copies or substantial portions of the Software.
-  ~
-  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-  ~ THE SOFTWARE.
-  -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -35,37 +11,14 @@
   <version>${revision}-${changelist}</version>
   <packaging>hpi</packaging>
   <name>Xcode integration</name>
-  <description>This plugin adds the ability to call Xcode command line tools to automate build and packaging iOS applications (iPhone, iPad, ...).</description>
+  <description>This plugin adds the ability to call Xcode command line tools to automate build and packaging applications, tools and frameworks for Apple systems (iOS, iPadOS, macOS, etc.).</description>
   <url>https://github.com/jenkinsci/xcode-plugin</url>
   <licenses>
     <license>
-      <name>MIT</name>
-      <url>LICENSE.txt</url>
-      <distribution>repo</distribution>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
-  <developers>
-    <developer>
-      <id>rayhilton</id>
-      <name>Ray Yamamoto Hilton</name>
-      <email>ray.hilton@gmail.com</email>
-    </developer>
-    <developer>
-      <id>aheritier</id>
-      <name>Arnaud Heritier</name>
-      <email>aheritier@apache.org</email>
-    </developer>
-    <developer>
-      <id>lacostej</id>
-      <name>Jerome Lacoste</name>
-      <email>jerome.lacoste@gmail.com</email>
-    </developer>
-    <developer>
-      <id>kazuhidet</id>
-      <name>Kazuhide Takahashi</name>
-      <email>kazuhide.t@linux-powered.com</email>
-    </developer>
-  </developers>
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
@@ -88,8 +41,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.319.x</artifactId>
-        <version>1654.vcb_69d035fa_20 </version>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
+        <version>5473.vb_9533d9e5d88</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -149,7 +102,8 @@
     <revision>2.0.17</revision>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/xcode-plugin</gitHubRepo>
-    <jenkins.version>2.492.1</jenkins.version>
+    <jenkins.baseline>2.492</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
   </properties>
   <build>
     <plugins>

@@ -1,30 +1,22 @@
 Xcode plugin
 ------------
 
-This plugin adds the ability to call Xcode command line tools to automate build and packaging iOS applications (iPhone, iPad, ...).
-*  Report all issues or features requests in Jira : https://issues.jenkins-ci.org/issues/?jql=component%20%3D%20xcode-plugin
+This plugin adds the ability to call Xcode command line tools to automate build and packaging applications, tools and frameworks for Apple systems (iOS, iPadOS, macOS, _etc._).
+*  Report all issues or features requests in Jira : https://issues.jenkins.io/issues/?jql=component%20%3D%20xcode-plugin
 
-Contact the Jenkins Community by [mail](http://jenkins-ci.org/content/mailing-lists) or [irc](http://jenkins-ci.org/content/chat) to have support.
+Contact the Jenkins Community by [mail](https://www.jenkins.io/mailing-lists/) or [chat](https://www.jenkins.io/chat/) to have support.
 
-*The maintainer is looking for a co-maintainer.
-I need your help!!*
-
-To help us maintain the plugin, you can take contact to jerome.lacoste
-*at* gmail.com in particular if you are able to test upcoming releases
-
-Thank you!
-
-A problem, An idea ?
+A problem, an idea?
 
 *Please use our tasks and issues tracker to report bugs, improvements or
 new feature.*
 
 -   [Report a
-    bug](https://issues.jenkins-ci.org/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=1)
+    bug](https://issues.jenkins.io/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=1)
 -   [Ask for a new
-    feature](https://issues.jenkins-ci.org/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=2)
+    feature](https://issues.jenkins.io/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=2)
 -   [Ask for an improvement of an existing
-    feature](https://issues.jenkins-ci.org/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=4)
+    feature](https://issues.jenkins.io/secure/CreateIssueDetails!init.jspa?Create=Create&components=16124&pid=10172&issuetype=4)
 
 Also if you want to propose some code change using a Github pull
 request, please open also a Jira issue. It is easier for developers to
@@ -32,7 +24,7 @@ track them.
 
 *Important!*
 
-Newesth version is compatibility with the previous version priour 2.0.12 is maintained.
+Newest version is compatibility with the previous version prior 2.0.12 is maintained.
 However, major changes have been made to the handling of macOS
 keychains.
 
@@ -41,10 +33,9 @@ credentials.
 After that, the information for accessing the keychain must be
 registered in the credentials.
 
-This plugin adds the ability to call Xcode command line tools to
-automate build and packaging iOS applications (iPhone, iPad, ...).
-
 #### Features
+
+This plugin adds the ability to call Xcode command line tools to automate build and packaging applications, tools and frameworks for Apple systems (iOS, iPadOS, macOS, _etc._).
 
 ##### Versioning
 
