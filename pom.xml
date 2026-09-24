@@ -19,28 +19,6 @@
       <url>https://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
-  <developers>
-    <developer>
-      <id>rayhilton</id>
-      <name>Ray Yamamoto Hilton</name>
-      <email>ray.hilton@gmail.com</email>
-    </developer>
-    <developer>
-      <id>aheritier</id>
-      <name>Arnaud Heritier</name>
-      <email>aheritier@apache.org</email>
-    </developer>
-    <developer>
-      <id>lacostej</id>
-      <name>Jerome Lacoste</name>
-      <email>jerome.lacoste@gmail.com</email>
-    </developer>
-    <developer>
-      <id>kazuhidet</id>
-      <name>Kazuhide Takahashi</name>
-      <email>kazuhide.t@linux-powered.com</email>
-    </developer>
-  </developers>
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
@@ -63,8 +41,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.319.x</artifactId>
-        <version>1654.vcb_69d035fa_20 </version>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
+        <version>5473.vb_9533d9e5d88</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -124,8 +102,8 @@
     <revision>2.0.17</revision>
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/xcode-plugin</gitHubRepo>
-    <jenkins.version>2.492.1</jenkins.version>
-    <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
+    <jenkins.baseline>2.492</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
   </properties>
   <build>
     <plugins>
