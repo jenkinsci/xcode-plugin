@@ -259,18 +259,6 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     @CheckForNull
     private Boolean interpretTargetAsRegEx;
     /**
-     * @deprecated 2.0.3
-     *
-    @CheckForNull
-    private String ipaManifestPlistUrl;
-     */
-    /**
-     * @deprecated 2.0.7
-     *
-    @CheckForNull
-    private Boolean manualSigning;
-     */
-    /**
      * @since 2.0.7
      */
     @CheckForNull
