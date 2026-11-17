@@ -46,6 +46,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.List;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -57,6 +58,8 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  * using {@code /usr/bin/xip --expand}.
  */
 public class XcodeXipInstaller extends ToolInstaller {
+
+    static final String DEFAULT_SUBDIR = "Xcode.app/Contents/Developer";
 
     private final String url;
     private final String subdir;
@@ -105,23 +108,68 @@ public class XcodeXipInstaller extends ToolInstaller {
 
         log.getLogger().println("[Xcode] Installing Xcode from " + url + " on " + node.getDisplayName() + "...");
 
-        FilePath tempArchive = dir.child("xcode_installer.xip");
-        downloadArchive(url, tempArchive, node, log);
+        FilePath localArchive = resolveAgentFilePath(url, node);
+        FilePath archiveToExtract;
+        boolean deleteArchiveAfterExtract = false;
+        if (localArchive != null && localArchive.exists()) {
+            log.getLogger().println("[Xcode] Using local .xip archive on " + node.getDisplayName() + ": " + localArchive.getRemote());
+            archiveToExtract = localArchive;
+        } else {
+            archiveToExtract = dir.child("xcode_installer.xip");
+            deleteArchiveAfterExtract = true;
+            downloadArchive(url, archiveToExtract, node, log);
+        }
 
         log.getLogger().println("[Xcode] Extracting .xip archive using /usr/bin/xip --expand...");
-        int exitCode = extractXip(tempArchive, dir, node, log);
+        int exitCode = extractXip(archiveToExtract, dir, node, log);
 
+        if (deleteArchiveAfterExtract) {
+            archiveToExtract.delete();
+        }
         if (exitCode != 0) {
-            tempArchive.delete();
             throw new AbortException("Failed to extract Xcode .xip archive: /usr/bin/xip exited with code " + exitCode);
         }
 
-        tempArchive.delete();
-        markerFile.write(cacheMarker, "UTF-8");
-
         FilePath resolved = resolveHome(dir);
+        if (!resolved.exists()) {
+            throw new AbortException(
+                    "Extracted .xip archive, but expected Xcode developer directory was not found at "
+                            + resolved.getRemote()
+                            + ". Check the 'Subdirectory within archive' setting.");
+        }
+
+        markerFile.write(cacheMarker, "UTF-8");
         log.getLogger().println("[Xcode] Successfully installed Xcode at " + resolved.getRemote());
         return resolved;
+    }
+
+    @CheckForNull
+    protected FilePath resolveAgentFilePath(String downloadUrl, Node node) {
+        if (downloadUrl == null || !downloadUrl.startsWith("file:")) {
+            return null;
+        }
+        VirtualChannel channel = node.getChannel();
+        if (channel == null) {
+            return null;
+        }
+        try {
+            URI uri = URI.create(downloadUrl);
+            if ("file".equalsIgnoreCase(uri.getScheme())) {
+                String path = uri.getPath();
+                if (path != null && !path.isEmpty()) {
+                    if (path.length() >= 3
+                            && path.charAt(0) == '/'
+                            && Character.isLetter(path.charAt(1))
+                            && path.charAt(2) == ':') {
+                        path = path.substring(1).replace('/', '\\');
+                    }
+                    return new FilePath(channel, path);
+                }
+            }
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+        return null;
     }
 
     protected boolean isXipAvailable(Node node) throws IOException, InterruptedException {
@@ -196,17 +244,48 @@ public class XcodeXipInstaller extends ToolInstaller {
 
     public FilePath resolveHome(FilePath dir) throws IOException, InterruptedException {
         if (subdir != null) {
-            return dir.child(subdir);
+            FilePath explicit = dir.child(subdir);
+            if (explicit.exists() || !DEFAULT_SUBDIR.equals(subdir)) {
+                return explicit;
+            }
+            FilePath detected = findAppDeveloperDir(dir);
+            return detected != null ? detected : explicit;
         }
-        FilePath xcodeAppDeveloper = dir.child("Xcode.app/Contents/Developer");
-        if (xcodeAppDeveloper.exists()) {
-            return xcodeAppDeveloper;
+        FilePath detected = findAppDeveloperDir(dir);
+        if (detected != null) {
+            return detected;
         }
         FilePath contentsDeveloper = dir.child("Contents/Developer");
         if (contentsDeveloper.exists()) {
             return contentsDeveloper;
         }
         return dir;
+    }
+
+    @CheckForNull
+    private FilePath findAppDeveloperDir(FilePath dir) throws IOException, InterruptedException {
+        FilePath xcodeAppDeveloper = dir.child(DEFAULT_SUBDIR);
+        if (xcodeAppDeveloper.exists()) {
+            return xcodeAppDeveloper;
+        }
+        FilePath betaDeveloper = dir.child("Xcode-beta.app/Contents/Developer");
+        if (betaDeveloper.exists()) {
+            return betaDeveloper;
+        }
+        if (dir.exists()) {
+            List<FilePath> subdirs = dir.listDirectories();
+            if (subdirs != null) {
+                for (FilePath candidate : subdirs) {
+                    if (candidate.getName().endsWith(".app")) {
+                        FilePath devDir = candidate.child("Contents/Developer");
+                        if (devDir.exists()) {
+                            return devDir;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @Extension

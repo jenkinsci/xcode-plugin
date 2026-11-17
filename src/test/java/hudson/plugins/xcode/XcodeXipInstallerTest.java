@@ -190,7 +190,7 @@ public class XcodeXipInstallerTest {
 
         assertNotNull(installedPath);
         assertTrue(installedPath.exists());
-        assertTrue(installedPath.getRemote().endsWith("CustomXcode.app/Contents/Developer"));
+        assertTrue(installedPath.getRemote().replace('\\', '/').endsWith("CustomXcode.app/Contents/Developer"));
         assertEquals(1, installer.extractCount);
     }
 
@@ -475,6 +475,90 @@ public class XcodeXipInstallerTest {
         try {
             installer.downloadArchive("http://127.0.0.1:9/dummy.xip", target, j.jenkins, TaskListener.NULL);
         } catch (IOException expected) {}
+    }
+
+    @Test
+    public void testResolveHomeBetaAppWithDefaultSubdir() throws Exception {
+        XcodeXipInstaller installer = new XcodeXipInstaller(null, "https://example.com/Xcode_beta.xip", XcodeXipInstaller.DEFAULT_SUBDIR);
+        FilePath baseDir = new FilePath(temp.newFolder());
+        FilePath betaDeveloper = baseDir.child("Xcode-beta.app/Contents/Developer");
+        betaDeveloper.mkdirs();
+
+        FilePath resolved = installer.resolveHome(baseDir);
+        assertEquals(betaDeveloper.getRemote(), resolved.getRemote());
+    }
+
+    @Test
+    public void testResolveHomeCustomNamedAppBundle() throws Exception {
+        XcodeXipInstaller installer = new XcodeXipInstaller(null, "https://example.com/Xcode.xip", null);
+        FilePath baseDir = new FilePath(temp.newFolder());
+        FilePath customAppDeveloper = baseDir.child("Xcode_27.3.app/Contents/Developer");
+        customAppDeveloper.mkdirs();
+
+        FilePath resolved = installer.resolveHome(baseDir);
+        assertEquals(customAppDeveloper.getRemote(), resolved.getRemote());
+    }
+
+    @Test
+    public void testPerformInstallationLocalFilePreserved() throws Exception {
+        File dummyRepoDir = temp.newFolder();
+        File localXip = new File(dummyRepoDir, "Xcode_27.3_beta_2.xip");
+        Files.writeString(localXip.toPath(), "local xip archive", StandardCharsets.UTF_8);
+
+        final FilePath[] extractedFrom = new FilePath[1];
+        XcodeXipInstaller installer = new XcodeXipInstaller(
+                null, localXip.toURI().toURL().toString(), XcodeXipInstaller.DEFAULT_SUBDIR) {
+            @Override
+            protected boolean isXipAvailable(Node node) {
+                return true;
+            }
+
+            @Override
+            protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log)
+                    throws IOException, InterruptedException {
+                extractedFrom[0] = archive;
+                destinationDir.child("Xcode-beta.app/Contents/Developer").mkdirs();
+                return 0;
+            }
+        };
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 27.3 beta 2", null, null);
+        FilePath installedPath = installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+
+        assertNotNull(extractedFrom[0]);
+        assertEquals(
+                new FilePath(localXip).getRemote().replace('\\', '/'),
+                extractedFrom[0].getRemote().replace('\\', '/'));
+        assertTrue("Original local .xip archive must not be deleted", localXip.exists());
+        assertTrue(installedPath.getRemote().replace('\\', '/').endsWith("Xcode-beta.app/Contents/Developer"));
+    }
+
+    @Test
+    public void testPerformInstallationThrowsWhenResolvedDirMissing() throws Exception {
+        File dummyRepoDir = temp.newFolder();
+        File localXip = new File(dummyRepoDir, "Xcode_bad.xip");
+        Files.writeString(localXip.toPath(), "mock xip", StandardCharsets.UTF_8);
+
+        XcodeXipInstaller installer = new XcodeXipInstaller(
+                null, localXip.toURI().toURL().toString(), "NonExistent.app/Contents/Developer") {
+            @Override
+            protected boolean isXipAvailable(Node node) {
+                return true;
+            }
+
+            @Override
+            protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log) {
+                return 0;
+            }
+        };
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode Bad", null, null);
+        try {
+            installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+            fail("Expected AbortException when extracted Xcode developer directory does not exist");
+        } catch (AbortException e) {
+            assertTrue(e.getMessage().contains("Subdirectory within archive"));
+        }
     }
 
     private static class TestableXcodeXipInstaller extends XcodeXipInstaller {
