@@ -1,0 +1,8 @@
+<div>
+    When enabled, Jenkins automatically exports <code>DEVELOPER_DIR</code> set to this tool's resolved
+    Xcode developer directory into the build environment (for example, in Declarative Pipeline
+    <code>tools { xcode '...' }</code> blocks so subsequent <code>sh</code> steps use this Xcode
+    version without manually wrapping commands in <code>withEnv</code>).
+    Disabled by default to preserve existing tool behavior. The <code>xcodeBuild</code> step always sets
+    <code>DEVELOPER_DIR</code> for itself regardless of this setting.
+</div>

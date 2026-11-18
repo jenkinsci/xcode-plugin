@@ -6,4 +6,7 @@
     <f:entry title="${%Path to Xcode tools}" field="home">
         <f:textbox />
     </f:entry>
+    <f:entry title="${%Export DEVELOPER_DIR environment variable}" field="exportDeveloperDir">
+        <f:checkbox />
+    </f:entry>
 </j:jelly>

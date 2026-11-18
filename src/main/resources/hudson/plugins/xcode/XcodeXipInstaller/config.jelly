@@ -9,4 +9,7 @@
     <f:entry title="${%Label}" field="label">
         <f:textbox />
     </f:entry>
+    <f:entry title="${%Run first-launch tasks via passwordless sudo}" field="runFirstLaunch">
+        <f:checkbox />
+    </f:entry>
 </j:jelly>

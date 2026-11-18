@@ -1,0 +1,35 @@
+<div>
+    <p>
+        When enabled, after extracting or locating the Xcode bundle the installer checks
+        <code>/usr/bin/xcodebuild -checkFirstLaunchStatus</code> (with <code>DEVELOPER_DIR</code> set)
+        and, if needed, runs <code>sudo -n /usr/bin/xcodebuild -license accept</code> (when
+        <code>-license check</code> fails) followed by <code>sudo -n /usr/bin/xcodebuild -runFirstLaunch</code>
+        non-interactively, then re-verifies status.
+    </p>
+    <p>
+        <strong>License notice:</strong> Enabling this option automatically accepts Apple's Xcode and SDK
+        license agreements and installs bundled system packages (such as simulator/device support
+        frameworks) on the macOS agent. Keep this disabled unless you accept those terms for your fleet.
+    </p>
+    <p>
+        <strong>Least-privilege sudoers setup:</strong> On the macOS agent, create a drop-in file using
+        <code>visudo</code> (do not include dots in the filename; <code>visudo</code> validates syntax and
+        applies the required <code>0440</code> <code>root:wheel</code> permissions):
+    </p>
+    <pre><code>sudo visudo -f /etc/sudoers.d/jenkins-xcode</code></pre>
+    <p>
+        Add these lines (replacing <code>jenkins</code> with your agent's macOS username; never grant
+        <code>NOPASSWD: ALL</code> or sudo rules for user-writable tool directories):
+    </p>
+    <pre><code>Defaults:jenkins env_keep += "DEVELOPER_DIR"
+jenkins ALL=(root) NOPASSWD: /usr/bin/xcodebuild -license accept, /usr/bin/xcodebuild -runFirstLaunch</code></pre>
+    <p>
+        You can verify the rule as the agent user with <code>sudo -l</code>.
+    </p>
+    <p>
+        <strong>Security caveat:</strong> Because any process running as the agent user can invoke these
+        commands with a custom <code>DEVELOPER_DIR</code>, only use passwordless <code>sudo</code> on
+        trusted, single-tenant, or ephemeral macOS CI agents (not shared machines running untrusted
+        pull-request code).
+    </p>
+</div>

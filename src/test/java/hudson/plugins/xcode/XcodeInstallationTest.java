@@ -25,6 +25,8 @@
 package hudson.plugins.xcode;
 
 import hudson.EnvVars;
+import hudson.model.TaskListener;
+import hudson.tools.ToolInstallation;
 import hudson.util.FormValidation;
 import java.io.File;
 import org.junit.Rule;
@@ -32,8 +34,11 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class XcodeInstallationTest {
 
@@ -71,5 +76,59 @@ public class XcodeInstallationTest {
         XcodeInstallation withEnv = new XcodeInstallation("Xcode Env", "${XCODE_HOME}", null);
         XcodeInstallation expanded = withEnv.forEnvironment(env);
         assertEquals("/custom/Xcode.app/Contents/Developer", expanded.getHome());
+    }
+
+    @Test
+    public void testDescriptorGetInstallationHandlesToolInstallationArray() {
+        XcodeInstallation.DescriptorImpl descriptor =
+                j.jenkins.getDescriptorByType(XcodeInstallation.DescriptorImpl.class);
+        assertNotNull(descriptor);
+
+        ToolInstallation[] rawArray = new ToolInstallation[] {
+            new XcodeInstallation("Xcode-16.3", "/Applications/Xcode.app/Contents/Developer", null)
+        };
+        // Simulate ToolDescriptor/JCasC setting a ToolInstallation[] runtime array
+        ((hudson.tools.ToolDescriptor) descriptor).setInstallations(rawArray);
+
+        XcodeInstallation[] typed = descriptor.getInstallations();
+        assertEquals(1, typed.length);
+        assertEquals("Xcode-16.3", typed[0].getName());
+        assertNotNull(descriptor.getInstallation("Xcode-16.3"));
+        assertEquals(1, XcodeInstallation.allInstallations().length);
+    }
+
+    @Test
+    public void testBuildEnvVarsDisabledByDefault() {
+        XcodeInstallation installation = new XcodeInstallation("Xcode 16", "/Applications/Xcode.app/Contents/Developer", null);
+        assertFalse(installation.isExportDeveloperDir());
+
+        EnvVars env = new EnvVars();
+        installation.buildEnvVars(env);
+        assertNull(env.get("DEVELOPER_DIR"));
+    }
+
+    @Test
+    public void testBuildEnvVarsExportsDeveloperDirAcrossNodeAndEnvironment() throws Exception {
+        XcodeInstallation installation = new XcodeInstallation("Xcode 16", "${BASE_XCODE}/Contents/Developer", null);
+        installation.setExportDeveloperDir(true);
+        assertTrue(installation.isExportDeveloperDir());
+
+        XcodeInstallation forNode = installation.forNode(j.jenkins, TaskListener.NULL);
+        assertTrue(forNode.isExportDeveloperDir());
+
+        EnvVars baseEnv = new EnvVars("BASE_XCODE", "/opt/Xcode_16.3.app");
+        XcodeInstallation forEnv = forNode.forEnvironment(baseEnv);
+        assertTrue(forEnv.isExportDeveloperDir());
+
+        EnvVars buildEnv = new EnvVars();
+        forEnv.buildEnvVars(buildEnv);
+        assertEquals("/opt/Xcode_16.3.app/Contents/Developer", buildEnv.get("DEVELOPER_DIR"));
+
+        // Blank home should not inject empty DEVELOPER_DIR
+        XcodeInstallation blankHome = new XcodeInstallation("Blank", "   ", null);
+        blankHome.setExportDeveloperDir(true);
+        EnvVars blankEnv = new EnvVars();
+        blankHome.buildEnvVars(blankEnv);
+        assertNull(blankEnv.get("DEVELOPER_DIR"));
     }
 }

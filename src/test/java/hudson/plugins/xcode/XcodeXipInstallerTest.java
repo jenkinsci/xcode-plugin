@@ -561,10 +561,140 @@ public class XcodeXipInstallerTest {
         }
     }
 
+    private String createMockXipUrl() throws Exception {
+        File dummyXip = temp.newFile("mock_" + System.nanoTime() + ".xip");
+        Files.writeString(dummyXip.toPath(), "mock xip", StandardCharsets.UTF_8);
+        return dummyXip.toURI().toURL().toString();
+    }
+
+    @Test
+    public void testRunFirstLaunchDisabledByDefaultDoesNotRunChecks() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        assertFalse(installer.isRunFirstLaunch());
+        installer.initialFirstLaunchStatus = 69;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+
+        assertEquals(0, installer.firstLaunchCheckCount);
+        assertEquals(0, installer.sudoRunFirstLaunchCount);
+    }
+
+    @Test
+    public void testRunFirstLaunchSkippedWhenAlreadyInitialized() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        installer.setRunFirstLaunch(true);
+        installer.initialFirstLaunchStatus = 0;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+
+        assertEquals(1, installer.firstLaunchCheckCount);
+        assertEquals(0, installer.sudoRunFirstLaunchCount);
+    }
+
+    @Test
+    public void testRunFirstLaunchExecutesSudoAndRechecksOnCacheHitToo() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        installer.setRunFirstLaunch(true);
+        installer.initialFirstLaunchStatus = 69;
+        installer.postSudoFirstLaunchStatus = 0;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+
+        assertEquals(1, installer.extractCount);
+        assertEquals(2, installer.firstLaunchCheckCount);
+        assertEquals(1, installer.sudoRunFirstLaunchCount);
+
+        // Cache hit should also verify first-launch status without re-extracting
+        installer.initialFirstLaunchStatus = 0;
+        installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+        assertEquals(1, installer.extractCount);
+        assertEquals(3, installer.firstLaunchCheckCount);
+        assertEquals(1, installer.sudoRunFirstLaunchCount);
+    }
+
+    @Test
+    public void testRunFirstLaunchThrowsWhenSudoFails() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        installer.setRunFirstLaunch(true);
+        installer.initialFirstLaunchStatus = 69;
+        installer.sudoExitCode = 1;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        try {
+            installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+            fail("Expected AbortException when sudo -n -runFirstLaunch fails");
+        } catch (AbortException e) {
+            assertTrue(e.getMessage().contains("passwordless sudo"));
+        }
+    }
+
+    @Test
+    public void testRunFirstLaunchThrowsWhenDeveloperDirNotPreservedBySudo() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        installer.setRunFirstLaunch(true);
+        installer.initialFirstLaunchStatus = 69;
+        installer.postSudoFirstLaunchStatus = 69;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        try {
+            installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+            fail("Expected AbortException when DEVELOPER_DIR is still uninitialized after sudo");
+        } catch (AbortException e) {
+            assertTrue(e.getMessage().contains("env_keep"));
+        }
+    }
+
+    @Test
+    public void testRunFirstLaunchAcceptsLicenseWhenNeeded() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        installer.setRunFirstLaunch(true);
+        installer.initialFirstLaunchStatus = 69;
+        installer.initialLicenseStatus = 69;
+        installer.postSudoFirstLaunchStatus = 0;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+
+        assertEquals(1, installer.licenseCheckCount);
+        assertEquals(1, installer.sudoLicenseAcceptCount);
+        assertEquals(1, installer.sudoRunFirstLaunchCount);
+        assertEquals(2, installer.firstLaunchCheckCount);
+    }
+
+    @Test
+    public void testRunFirstLaunchThrowsWhenSudoLicenseAcceptFails() throws Exception {
+        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(createMockXipUrl(), null);
+        installer.setRunFirstLaunch(true);
+        installer.initialFirstLaunchStatus = 69;
+        installer.initialLicenseStatus = 69;
+        installer.sudoLicenseExitCode = 1;
+
+        XcodeInstallation tool = new XcodeInstallation("Xcode 16", null, null);
+        try {
+            installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
+            fail("Expected AbortException when sudo -n -license accept fails");
+        } catch (AbortException e) {
+            assertTrue(e.getMessage().contains("-license accept"));
+            assertEquals(0, installer.sudoRunFirstLaunchCount);
+        }
+    }
+
     private static class TestableXcodeXipInstaller extends XcodeXipInstaller {
         int exitCode = 0;
         int extractCount = 0;
         boolean simulateCustomSubdir = false;
+        int initialFirstLaunchStatus = 0;
+        int postSudoFirstLaunchStatus = 0;
+        int initialLicenseStatus = 0;
+        int sudoLicenseExitCode = 0;
+        int sudoExitCode = 0;
+        int firstLaunchCheckCount = 0;
+        int licenseCheckCount = 0;
+        int sudoLicenseAcceptCount = 0;
+        int sudoRunFirstLaunchCount = 0;
 
         public TestableXcodeXipInstaller(String url, String subdir) {
             super(null, url, subdir);
@@ -585,6 +715,30 @@ public class XcodeXipInstallerTest {
                 destinationDir.child("Xcode.app/Contents/Developer").mkdirs();
             }
             return exitCode;
+        }
+
+        @Override
+        protected int checkFirstLaunchStatus(FilePath developerDir, Node node, TaskListener log) {
+            firstLaunchCheckCount++;
+            return sudoRunFirstLaunchCount > 0 ? postSudoFirstLaunchStatus : initialFirstLaunchStatus;
+        }
+
+        @Override
+        protected int checkLicenseStatus(FilePath developerDir, Node node, TaskListener log) {
+            licenseCheckCount++;
+            return initialLicenseStatus;
+        }
+
+        @Override
+        protected int executeSudoLicenseAccept(FilePath developerDir, Node node, TaskListener log) {
+            sudoLicenseAcceptCount++;
+            return sudoLicenseExitCode;
+        }
+
+        @Override
+        protected int executeSudoRunFirstLaunch(FilePath developerDir, Node node, TaskListener log) {
+            sudoRunFirstLaunchCount++;
+            return sudoExitCode;
         }
     }
 

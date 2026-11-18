@@ -46,10 +46,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
@@ -60,9 +64,11 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 public class XcodeXipInstaller extends ToolInstaller {
 
     static final String DEFAULT_SUBDIR = "Xcode.app/Contents/Developer";
+    private static final ConcurrentMap<String, Object> NODE_FIRST_LAUNCH_LOCKS = new ConcurrentHashMap<>();
 
     private final String url;
     private final String subdir;
+    private boolean runFirstLaunch;
 
     @DataBoundConstructor
     public XcodeXipInstaller(@CheckForNull String label, @NonNull String url, @CheckForNull String subdir) {
@@ -79,6 +85,15 @@ public class XcodeXipInstaller extends ToolInstaller {
     @CheckForNull
     public String getSubdir() {
         return subdir;
+    }
+
+    public boolean isRunFirstLaunch() {
+        return runFirstLaunch;
+    }
+
+    @DataBoundSetter
+    public void setRunFirstLaunch(boolean runFirstLaunch) {
+        this.runFirstLaunch = runFirstLaunch;
     }
 
     @Override
@@ -101,6 +116,7 @@ public class XcodeXipInstaller extends ToolInstaller {
                 FilePath resolved = resolveHome(dir);
                 if (resolved.exists()) {
                     log.getLogger().println("[Xcode] Xcode already installed from " + url + " at " + resolved.getRemote());
+                    ensureFirstLaunchIfEnabled(resolved, node, log);
                     return resolved;
                 }
             }
@@ -140,6 +156,7 @@ public class XcodeXipInstaller extends ToolInstaller {
 
         markerFile.write(cacheMarker, "UTF-8");
         log.getLogger().println("[Xcode] Successfully installed Xcode at " + resolved.getRemote());
+        ensureFirstLaunchIfEnabled(resolved, node, log);
         return resolved;
     }
 
@@ -195,6 +212,109 @@ public class XcodeXipInstaller extends ToolInstaller {
         return launcher.launch()
                 .cmds(args)
                 .pwd(destinationDir)
+                .stdout(log)
+                .stderr(log.getLogger())
+                .join();
+    }
+
+    /**
+     * Checks license and first-launch initialization for {@code developerDir} and runs
+     * {@code sudo -n /usr/bin/xcodebuild -license accept} / {@code -runFirstLaunch} when enabled and needed.
+     */
+    protected void ensureFirstLaunchIfEnabled(FilePath developerDir, Node node, TaskListener log)
+            throws IOException, InterruptedException {
+        if (!runFirstLaunch) {
+            return;
+        }
+        String nodeKey = Util.fixNull(node.getNodeName());
+        Object lock = NODE_FIRST_LAUNCH_LOCKS.computeIfAbsent(nodeKey, k -> new Object());
+        synchronized (lock) {
+            String devDir = developerDir.getRemote();
+            if (checkFirstLaunchStatus(developerDir, node, log) == 0) {
+                return;
+            }
+
+            if (checkLicenseStatus(developerDir, node, log) != 0) {
+                log.getLogger().println(
+                        "[Xcode] Running 'sudo -n /usr/bin/xcodebuild -license accept' for DEVELOPER_DIR=" + devDir);
+                int licenseExit = executeSudoLicenseAccept(developerDir, node, log);
+                if (licenseExit != 0) {
+                    throw new AbortException(
+                            "Failed to run 'sudo -n /usr/bin/xcodebuild -license accept' (exit code "
+                                    + licenseExit
+                                    + "). Ensure passwordless sudo is configured for '/usr/bin/xcodebuild -license accept, "
+                                    + "/usr/bin/xcodebuild -runFirstLaunch' with 'Defaults env_keep += \"DEVELOPER_DIR\"', "
+                                    + "or disable the first-launch sudo option.");
+                }
+            }
+
+            log.getLogger().println("[Xcode] Running 'sudo -n /usr/bin/xcodebuild -runFirstLaunch' for DEVELOPER_DIR=" + devDir);
+            int sudoExit = executeSudoRunFirstLaunch(developerDir, node, log);
+            if (sudoExit != 0) {
+                throw new AbortException(
+                        "Failed to run 'sudo -n /usr/bin/xcodebuild -runFirstLaunch' (exit code "
+                                + sudoExit
+                                + "). Ensure passwordless sudo is configured for '/usr/bin/xcodebuild -license accept, "
+                                + "/usr/bin/xcodebuild -runFirstLaunch' with 'Defaults env_keep += \"DEVELOPER_DIR\"', "
+                                + "or disable the first-launch sudo option.");
+            }
+
+            int recheckExit = checkFirstLaunchStatus(developerDir, node, log);
+            if (recheckExit != 0) {
+                throw new AbortException(
+                        "'sudo -n /usr/bin/xcodebuild -runFirstLaunch' exited 0, but 'xcodebuild -checkFirstLaunchStatus' "
+                                + "still returned "
+                                + recheckExit
+                                + " for DEVELOPER_DIR="
+                                + devDir
+                                + ". Ensure sudoers preserves DEVELOPER_DIR (Defaults env_keep += \"DEVELOPER_DIR\").");
+            }
+            log.getLogger().println("[Xcode] Completed Xcode first-launch initialization for " + devDir);
+        }
+    }
+
+    protected int checkFirstLaunchStatus(FilePath developerDir, Node node, TaskListener log)
+            throws IOException, InterruptedException {
+        return runWithDeveloperDir(
+                developerDir,
+                new ArgumentListBuilder().add("/usr/bin/xcodebuild", "-checkFirstLaunchStatus"),
+                node,
+                log);
+    }
+
+    protected int checkLicenseStatus(FilePath developerDir, Node node, TaskListener log)
+            throws IOException, InterruptedException {
+        return runWithDeveloperDir(
+                developerDir,
+                new ArgumentListBuilder().add("/usr/bin/xcodebuild", "-license", "check"),
+                node,
+                log);
+    }
+
+    protected int executeSudoLicenseAccept(FilePath developerDir, Node node, TaskListener log)
+            throws IOException, InterruptedException {
+        return runWithDeveloperDir(
+                developerDir,
+                new ArgumentListBuilder().add("/usr/bin/sudo", "-n", "/usr/bin/xcodebuild", "-license", "accept"),
+                node,
+                log);
+    }
+
+    protected int executeSudoRunFirstLaunch(FilePath developerDir, Node node, TaskListener log)
+            throws IOException, InterruptedException {
+        return runWithDeveloperDir(
+                developerDir,
+                new ArgumentListBuilder().add("/usr/bin/sudo", "-n", "/usr/bin/xcodebuild", "-runFirstLaunch"),
+                node,
+                log);
+    }
+
+    private int runWithDeveloperDir(FilePath developerDir, ArgumentListBuilder args, Node node, TaskListener log)
+            throws IOException, InterruptedException {
+        Launcher launcher = node.createLauncher(log);
+        return launcher.launch()
+                .cmds(args)
+                .envs(Collections.singletonMap("DEVELOPER_DIR", developerDir.getRemote()))
                 .stdout(log)
                 .stderr(log.getLogger())
                 .join();
