@@ -22,10 +22,7 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
-import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
-import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
-import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
@@ -44,6 +41,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -51,7 +49,6 @@ import java.util.UUID;
 /**
  * Installs {@link DeveloperProfile} into the current slave and unlocks its keychain
  * in preparation for the signing that uses it.
- *
  * TODO: destroy identity in the end.
  *
  * @author Kohsuke Kawaguchi
@@ -166,7 +163,7 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
                 else {
                     _keychainPath = envs.expand(keychain.getKeychainPath());
                     _keychainPwd = envs.expand(Secret.toString(keychain.getKeychainPassword()));
-                    _importIntoExistingKeychain = Boolean.valueOf(true);
+                    _importIntoExistingKeychain = Boolean.TRUE;
                 }
             }
             else if ( StringUtils.isNotEmpty(_keychainId) ) {
@@ -177,7 +174,7 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
                 else {
                     _keychainPath = envs.expand(keychain.getKeychainPath());
                     _keychainPwd = envs.expand(keychain.getPassword().getPlainText());
-                    _importIntoExistingKeychain = Boolean.valueOf(true);
+                    _importIntoExistingKeychain = Boolean.TRUE;
                 }
             }
             else {
@@ -191,18 +188,18 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
             }
         }
         else {
-            // Use temporary keychain with random UUID nasme.
+            // Use temporary keychain with random UUID name.
             _keychainPath = "jenkins-" + run.getParent().getFullName().replace('/', '-');
 	    _keychainPwd = UUID.randomUUID().toString();
-	    _importIntoExistingKeychain = Boolean.valueOf(false);
+	    _importIntoExistingKeychain = Boolean.FALSE;
         }
 
-        // Note: keychain are usualy suffixed with .keychain. If we change we should probably clean up the ones we created
+        // Note: keychain are usually suffixed with .keychain. If we change we should probably clean up the ones we created
 
         ArgumentListBuilder args;
 
         if ( BooleanUtils.isNotTrue(_importIntoExistingKeychain) ) {
-	    // if the key chain is already present, delete it and start fresh
+	    // if the keychain is already present, delete it and start fresh
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             args = new ArgumentListBuilder("security", "delete-keychain", _keychainPath);
             launcher.launch().cmds(args).stdout(out).join();
@@ -265,7 +262,7 @@ public class DeveloperProfileLoader extends Builder implements SimpleBuildStep {
 	    ByteArrayOutputStream output = new ByteArrayOutputStream();
 	    if ( launcher.launch().cmds(args).stdout(output).join() != 0 ) {
 		listener.getLogger().write(output.toByteArray());
-		String strResult = new String(output.toByteArray(), "UTF-8");
+		String strResult = output.toString(StandardCharsets.UTF_8);
 	        if ( strResult.contains("A default keychain could not be found.") ) {
 		    args = new ArgumentListBuilder("security", "default-keychain");
 		    args.add("-d").add("user");

@@ -19,7 +19,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 
 import au.com.rayh.report.TestCase;
-import au.com.rayh.report.TestError;
 import au.com.rayh.report.TestFailure;
 import au.com.rayh.report.TestSuite;
 
@@ -30,7 +29,7 @@ import au.com.rayh.report.TestSuite;
 public class XcodeTestSummariesParser {
     private FilePath testReportsDir;
     //private static Pattern ASSERTION_FAILURE = Pattern.compile("(Assertion Failure: .*?)\\{\\(\\n(.*?)\\n\\)\\}", Pattern.DOTALL);
-    private static Pattern FAILED_MESSAGE = Pattern.compile("(failed: .*?)\\n\\((.*?)\\n\\)", Pattern.DOTALL);
+    private static final Pattern FAILED_MESSAGE = Pattern.compile("(failed: .*?)\\n\\((.*?)\\n\\)", Pattern.DOTALL);
 
     public XcodeTestSummariesParser(FilePath workspace) throws IOException, InterruptedException {
 	super();
@@ -61,11 +60,11 @@ public class XcodeTestSummariesParser {
 
     private static void addFailureSummaries(NSObject[] failureSummaries, TestCase currentTestCase) {
 	for ( NSObject object:failureSummaries ) {
-	    NSDictionary failureSummarie = (NSDictionary)object;
-	    boolean performanceFailure = ((NSNumber)failureSummarie.objectForKey("PerformanceFailure")).boolValue();
+	    NSDictionary summaries = (NSDictionary)object;
+	    boolean performanceFailure = ((NSNumber)summaries.objectForKey("PerformanceFailure")).boolValue();
 	    if ( !performanceFailure ) {
 		TestFailure failure;
-		String message = failureSummarie.objectForKey("Message").toString();
+		String message = summaries.objectForKey("Message").toString();
 		Matcher m = FAILED_MESSAGE.matcher(message);
 		if ( m.matches() ) {
 		    String errorMessage = m.group(1);
@@ -73,8 +72,8 @@ public class XcodeTestSummariesParser {
 		    failure = new TestFailure(errorMessage, stackTrace);
 		}
 		else {
-		    String fileName = failureSummarie.objectForKey("FileName").toString();
-		    String lineNumber = failureSummarie.objectForKey("LineNumber").toString();
+		    String fileName = summaries.objectForKey("FileName").toString();
+		    String lineNumber = summaries.objectForKey("LineNumber").toString();
 		    failure = new TestFailure(message + "\n at File: " + fileName + "\n Line number: " + lineNumber, "No stacktrace here.");
 		}
 		currentTestCase.getFailures().add(failure);
@@ -82,33 +81,14 @@ public class XcodeTestSummariesParser {
 	}
     }
 
-    /*
-    private static void addActivitySummaries(NSObject[] activitySummaries, TestCase currentTestCase) {
-        for ( NSObject object:activitySummaries ) {
-	    NSDictionary summarie = (NSDictionary)object;
-	    NSObject value = summarie.objectForKey("Title");
-            if ( value != null ) {
-		String title = value.toString();
-		Matcher m = ASSERTION_FAILURE.matcher(title);
-		if ( m.matches() ) {
-		    String errorLocation = m.group(1);
-		    String errorMessage = m.group(2);
-		    TestFailure failure = new TestFailure(errorMessage, errorLocation);
-		    currentTestCase.getFailures().add(failure);
-		}
-            }
-        }
-    }
-    */
-
     /**
      * @param tests An array of NSDictionaries containing the results of subtests.
-     * @param parentTestSuite An instance of the parent test result including this subtests.
+     * @param parentTestSuite An instance of the parent test result including these subtests.
      */
     public void parseSubTests(NSObject[] tests, TestSuite parentTestSuite) throws ParseException, IOException, InterruptedException, JAXBException {
 	for ( NSObject object:tests ) {
             NSDictionary test = (NSDictionary)object;
-	    Float duration = ((NSNumber)test.objectForKey("Duration")).floatValue();
+	    float duration = ((NSNumber)test.objectForKey("Duration")).floatValue();
 	    String testName = test.objectForKey("TestName").toString();
 	    String testIdentifier = test.objectForKey("TestIdentifier").toString();
 	    String testObjectClass = test.objectForKey("TestObjectClass").toString();
@@ -122,14 +102,7 @@ public class XcodeTestSummariesParser {
 			NSObject[] failureSummaries = ((NSArray)value).getArray();
 			addFailureSummaries(failureSummaries, currentTestCase);
 		    }
-		    /*
-		    value = test.objectForKey("ActivitySummaries");
-		    if ( value != null ) {
-			NSObject[] activitySummaries = ((NSArray)value).getArray();
-			addActivitySummaries(activitySummaries, currentTestCase);
-		    }
-		    */
-		    currentTestCase.setTime(duration);
+            currentTestCase.setTime(duration);
 		    parentTestSuite.getTestCases().add(currentTestCase);
 		    parentTestSuite.addFailure();
 		}
@@ -157,13 +130,13 @@ public class XcodeTestSummariesParser {
 	    NSDictionary rootDict = (NSDictionary)PropertyListParser.parse(testSummariesPlistFile.read());
 	    NSObject[] testableSummaries = ((NSArray)rootDict.objectForKey("TestableSummaries")).getArray();
 	    for ( NSObject object:testableSummaries ) {
-		NSDictionary testSummarie = (NSDictionary)object;
-		String diagnosticsDirectory = testSummarie.objectForKey("DiagnosticsDirectory").toString();
-		String testName = testSummarie.objectForKey("TestName").toString();
-		String projectPath = testSummarie.objectForKey("ProjectPath").toString();
-		String targetName = testSummarie.objectForKey("TargetName").toString();
+		NSDictionary testSummaries = (NSDictionary)object;
+		String diagnosticsDirectory = testSummaries.objectForKey("DiagnosticsDirectory").toString();
+		String testName = testSummaries.objectForKey("TestName").toString();
+		String projectPath = testSummaries.objectForKey("ProjectPath").toString();
+		String targetName = testSummaries.objectForKey("TargetName").toString();
 		TestSuite currentTestSuite = new TestSuite(InetAddress.getLocalHost().getHostName(), testName, null);
-		NSObject[] tests = ((NSArray)testSummarie.objectForKey("Tests")).getArray();
+		NSObject[] tests = ((NSArray)testSummaries.objectForKey("Tests")).getArray();
 		if ( tests != null ) {
 		    parseSubTests(tests, currentTestSuite);
 		}

@@ -119,7 +119,7 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
 
     @Deprecated
     public ArrayList<Keychain> getKeychains() {
-	return keychains == null ? keychains : new ArrayList<Keychain>();
+	return keychains == null ? keychains : new ArrayList<>();
     }
 
     @Deprecated

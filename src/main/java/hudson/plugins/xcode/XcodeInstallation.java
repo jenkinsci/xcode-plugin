@@ -2,7 +2,6 @@ package hudson.plugins.xcode;
 
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.init.Initializer;
 import hudson.model.EnvironmentSpecific;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -24,10 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
-
-import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
-import java.util.logging.Level;
 
 /**
  * Information about Xcode installation.
@@ -84,14 +79,14 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
 
     @Override
     public XcodeInstallation forNode(Node node, TaskListener log) throws IOException, InterruptedException {
-        XcodeInstallation resolved = new XcodeInstallation(getName(), translateFor(node, log), Collections.<ToolProperty<?>>emptyList());
+        XcodeInstallation resolved = new XcodeInstallation(getName(), translateFor(node, log), Collections.emptyList());
         resolved.setExportDeveloperDir(exportDeveloperDir);
         return resolved;
     }
 
     @Override
     public XcodeInstallation forEnvironment(EnvVars environment) {
-        XcodeInstallation resolved = new XcodeInstallation(getName(), environment.expand(getHome()), Collections.<ToolProperty<?>>emptyList());
+        XcodeInstallation resolved = new XcodeInstallation(getName(), environment.expand(getHome()), Collections.emptyList());
         resolved.setExportDeveloperDir(exportDeveloperDir);
         return resolved;
     }

@@ -61,6 +61,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectStreamException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -888,7 +889,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder() {
-	this.skipBuildStep = Boolean.valueOf(false);
+	this.skipBuildStep = Boolean.FALSE;
     }
 
     @Deprecated
@@ -954,9 +955,9 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 	this.displayImageURL = displayImageURL;
 	this.fullSizeImageURL = fullSizeImageURL;
 	this.assetPackManifestURL = assetPackManifestURL;
-	this.stripSwiftSymbols = Boolean.valueOf(true);
+	this.stripSwiftSymbols = Boolean.TRUE;
 
-	this.skipBuildStep = Boolean.valueOf(false);
+	this.skipBuildStep = Boolean.FALSE;
     }
 
     @Deprecated
@@ -1057,7 +1058,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         if (provideApplicationVersion == null) {
             if (!StringUtils.isEmpty(cfBundleVersionValue)
                 || !StringUtils.isEmpty(cfBundleShortVersionStringValue)) {
-                provideApplicationVersion = Boolean.valueOf(true);
+                provideApplicationVersion = Boolean.TRUE;
             }
         }
         return this;
@@ -1131,7 +1132,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         // Infer as best we can the build platform
         String buildPlatform = "iphoneos";
         if (!StringUtils.isEmpty(sdk)) {
-            if (StringUtils.contains(sdk.toLowerCase(), "iphonesimulator")) {
+            if (StringUtils.containsIgnoreCase(sdk, "iphonesimulator")) {
                 // Building for the simulator
                 buildPlatform = "iphonesimulator";
             }
@@ -1242,8 +1243,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         if ( signingMethod != null && signingMethod.equals("readFromProject") ) {
 	    provisioningProfiles = new ArrayList<>();
 	    listener.getLogger().println(Messages.XCodeBuilder_ReadSigningInfoFromProject());
-	    XcodeProject xcodeProject = null;
-	    ArrayList<FilePath> projectLocations = new ArrayList<FilePath>();
+	    XcodeProject xcodeProject;
+	    ArrayList<FilePath> projectLocations = new ArrayList<>();
 	    // Retrieve target from Xcode project.
 	    FilePath projectLocation = null;
 	    if ( !StringUtils.isEmpty(xcodeProjectFile) ) {
@@ -1263,7 +1264,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 		if ( projectList == null ) {
 		    listener.getLogger().println("Empty or Invalid workspacefile: " + projectRoot.child(xcodeWorkspaceFile + ".xcworkspace").absolutize().getRemote());
 		}
-		else if ( projectList.size() > 0 && xcodeSchema != null && !StringUtils.isEmpty(xcodeSchema) ) {
+		else if (!projectList.isEmpty() && xcodeSchema != null && !StringUtils.isEmpty(xcodeSchema) ) {
 		    for ( String location : projectList ) {
 			HashMap<String, ProjectScheme> xcodeSchemes = XcodeProjectParser.listXcodeSchemes(projectRoot.child(location));
 			// JENKINS-59523, JENKINS-59609
@@ -1364,7 +1365,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 		    if ( !automaticSigning ) {
 			String provisioningProfileUUID = buildConfiguration.provisioningProfileUUID;
 			String provisioningProfileSpecifier = buildConfiguration.provisioningProfileSpecifier;
-			String bundleIdentifier = null;
+			String bundleIdentifier;
 			if ( buildConfiguration.bundleIdentifier != null ) {
 			    bundleIdentifier = buildConfiguration.bundleIdentifier;
 			}
@@ -1386,7 +1387,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 			    bundleIdentifier = bundleIdentifier.replaceAll(Pattern.quote("$(PRODUCT_NAME:rfc1034identifier)"), productName);
 			}
 			// PROVISIONING_PROFILE(UUID) or PROVISIONING_PROFILE_SPECIFIER
-			String provisioningProfileIdentifier = null;
+			String provisioningProfileIdentifier;
 			if ( provisioningProfileSpecifier != null ) {
 			    // We will use SPECIFIE instead UUID.
 			    provisioningProfileIdentifier = provisioningProfileSpecifier;
@@ -1448,7 +1449,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(baos).pwd(projectRoot).start().joinWithTimeout(10, TimeUnit.SECONDS, listener);
-            String xcodeBuildListOutput = baos.toString("UTF-8");
+            String xcodeBuildListOutput = baos.toString(StandardCharsets.UTF_8);
             listener.getLogger().println(xcodeBuildListOutput);
             boolean timedOut = returnCode == SIGTERM;
             if (returnCode > 0 && !timedOut) return false;
@@ -1465,7 +1466,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(baos).pwd(projectRoot).start().joinWithTimeout(10, TimeUnit.SECONDS, listener);
-            String xcodeBuildHelpOutput = baos.toString("UTF-8");
+            String xcodeBuildHelpOutput = baos.toString(StandardCharsets.UTF_8);
             boolean timedOut = returnCode == SIGTERM;
             if (returnCode > 0 && !timedOut) return false;
 
@@ -1735,7 +1736,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
 	    boolean manualSigning = (!archiveAutomaticSigning && signingMethod != null && (signingMethod.equals("manual") || signingMethod.equals("readFromProject")));
 	    if ( manualSigning ) {
-		if ( provisioningProfiles != null && provisioningProfiles.size() > 0 ) {
+		if ( provisioningProfiles != null && !provisioningProfiles.isEmpty()) {
 		    for ( ProvisioningProfile pp : provisioningProfiles ) {
 			String provisioningProfileUUID = envs.expand(pp.getProvisioningProfileUUID());
 			if ( !StringUtils.isEmpty(provisioningProfileUUID) &&
@@ -1857,7 +1858,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 	    }
 	    if ( manualSigning ) {
 		exportOptionsPlist.put("signingCertificate", ipaExportMethod.equals("development") ? DEV_SIGNING_CERTIFICATE_SELECTOR : DIST_SIGNING_CERTIFICATE_SELECTOR);
-		if ( provisioningProfiles != null && provisioningProfiles.size() > 0 ) {
+		if ( provisioningProfiles != null && !provisioningProfiles.isEmpty()) {
 		    NSDictionary provisioningProfileDict = new NSDictionary();
 		    for ( ProvisioningProfile pp : provisioningProfiles ) {
 			String provisioningProfileAppId = envs.expand(pp.getProvisioningProfileAppId());
@@ -1969,7 +1970,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
 
             List<FilePath> archives = buildDirectory.list(new XCArchiveFileFilter());
             // FilePath is based on File.listFiles() which can randomly fail | http://stackoverflow.com/questions/3228147/retrieving-the-underlying-error-when-file-listfiles-return-null
-            if ( archives == null || archives.size() < 1 ) {
+            if ( archives == null || archives.isEmpty()) {
                 listener.fatalError(Messages.XCodeBuilder_NoArchivesInBuildDirectory(buildDirectory.absolutize().getRemote()));
                 return false;
             }
@@ -2183,7 +2184,7 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
     }
 
     static List<String> splitXcodeBuildArguments(String xcodebuildArguments) {
-        if (xcodebuildArguments == null || xcodebuildArguments.length() == 0) {
+        if (xcodebuildArguments == null || xcodebuildArguments.isEmpty()) {
             return new ArrayList<>(0);
         }
 

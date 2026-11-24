@@ -56,23 +56,23 @@ import au.com.rayh.report.TestSuite;
 
 public class XCodeBuildOutputParser {
 
-    private static DateFormat[] dateFormats = {
+    private static final DateFormat[] dateFormats = {
 	new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z"),
 	new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
     };
-    private static Pattern START_SUITE = Pattern.compile("Test Suite '([^\\/](?:\\.|[^'\\\\])*)'\\s+started at\\s+(.*)");
-    private static Pattern END_SUITE = Pattern.compile("Test Suite '([^\\/](?:\\.|[^'\\\\])*)'\\s+\\S+\\s+at\\s+(.*).");
-    private static Pattern START_TESTCASE = Pattern.compile("Test Case '-\\[(\\S+)\\s+(\\S+)\\]' started.");
-    private static Pattern END_TESTCASE = Pattern.compile("Test Case '-\\[(\\S+)\\s+(\\S+)\\]' passed \\((.*) seconds\\).");
-    private static Pattern ERROR_TESTCASE = Pattern.compile("(.*): error: -\\[(\\S+)\\s+(\\S+)\\] : (.*)");
-    private static Pattern ERROR_UI_TESTCASE = Pattern.compile(".*?Assertion Failure: (.+:\\d+): (.*)");
-    private static Pattern FAILED_TESTCASE = Pattern.compile("Test Case '-\\[(\\S+)\\s+(\\S+)\\]' failed \\((\\S+) seconds\\).");
-    private static Pattern FAILED_WITH_EXIT_CODE = Pattern.compile("failed with exit code (\\d+)");
-    private static Pattern TERMINATING_EXCEPTION = Pattern.compile(".*\\*\\*\\* Terminating app due to uncaught exception '(\\S+)', reason: '(.+[^\\\\])'.*");
+    private static final Pattern START_SUITE = Pattern.compile("Test Suite '([^\\/](?:\\.|[^'\\\\])*)'\\s+started at\\s+(.*)");
+    private static final Pattern END_SUITE = Pattern.compile("Test Suite '([^\\/](?:\\.|[^'\\\\])*)'\\s+\\S+\\s+at\\s+(.*).");
+    private static final Pattern START_TESTCASE = Pattern.compile("Test Case '-\\[(\\S+)\\s+(\\S+)\\]' started.");
+    private static final Pattern END_TESTCASE = Pattern.compile("Test Case '-\\[(\\S+)\\s+(\\S+)\\]' passed \\((.*) seconds\\).");
+    private static final Pattern ERROR_TESTCASE = Pattern.compile("(.*): error: -\\[(\\S+)\\s+(\\S+)\\] : (.*)");
+    private static final Pattern ERROR_UI_TESTCASE = Pattern.compile(".*?Assertion Failure: (.+:\\d+): (.*)");
+    private static final Pattern FAILED_TESTCASE = Pattern.compile("Test Case '-\\[(\\S+)\\s+(\\S+)\\]' failed \\((\\S+) seconds\\).");
+    private static final Pattern FAILED_WITH_EXIT_CODE = Pattern.compile("failed with exit code (\\d+)");
+    private static final Pattern TERMINATING_EXCEPTION = Pattern.compile(".*\\*\\*\\* Terminating app due to uncaught exception '(\\S+)', reason: '(.+[^\\\\])'.*");
     private File testReportsDir;
     protected OutputStream captureOutputStream;
     protected int exitCode;
-    protected HashMap<String, TestSuite> testSuitesHash = new HashMap<String, TestSuite>();
+    protected HashMap<String, TestSuite> testSuitesHash = new HashMap<>();
     protected TestSuite currentTestSuite = null;
     protected TestCase currentTestCase = null;
     protected boolean consoleLog;
@@ -140,7 +140,7 @@ public class XCodeBuildOutputParser {
     }
 
     private void requireTestSuite() {
-	if(testSuitesHash.size()==0) {
+	if(testSuitesHash.isEmpty()) {
 	    throw new RuntimeException("Log statements out of sync: current test suite was empty");
 	}
 	if(currentTestSuite==null) {
@@ -223,7 +223,7 @@ public class XCodeBuildOutputParser {
             testSuitesHash.remove(suite_name);
 	    currentTestSuite = null;
 	    if ( testSuitesHash.size() == 1 ) {
-		// If the last test suitev in nhash is Unknown, process it and exit.
+		// If the last test suite in hash is Unknown, process it and exit.
 		currentTestSuite = testSuitesHash.get("UnknownSuite");
 		if ( currentTestSuite != null ) {
 		    currentTestSuite.setEndTime(parseDate(m.group(2)));

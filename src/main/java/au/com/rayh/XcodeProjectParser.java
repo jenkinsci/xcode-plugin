@@ -1,16 +1,11 @@
 package au.com.rayh;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.text.ParseException;
-import java.io.ByteArrayInputStream;
+
 import hudson.FilePath;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -27,10 +22,8 @@ import org.xml.sax.SAXException;
 
 import com.dd.plist.NSDictionary; 
 import com.dd.plist.NSArray;
-import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
-import com.dd.plist.NSString;
-import com.dd.plist.PropertyListFormatException; 
+import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser; 
 
 /**
@@ -42,12 +35,12 @@ public class XcodeProjectParser {
     /**
      * Retrieve all Xcode scheme file from project directory.
      * @param projectLocation Xcode project file location (directory path)
-     * @return the list of schema files found in the project directory and the result (ProjectScheme) of analysis of the contents as a HashMap. If analysis fails, it is empty
+     * @return the map of schema files found in the project directory and the result (ProjectScheme) of analysis of the contents as a HashMap. If analysis fails, it is empty
      */
     public static HashMap<String, ProjectScheme> listXcodeSchemes(FilePath projectLocation) {
 	String currentUser = System.getProperty("user.name") ;
-	HashMap<String, ProjectScheme> schemeList = new HashMap<String, ProjectScheme>();
-	List<FilePath> schemeFilesDirList = new ArrayList<FilePath>();
+	HashMap<String, ProjectScheme> schemeList = new HashMap<>();
+	List<FilePath> schemeFilesDirList = new ArrayList<>();
 	try {
 	    if ( projectLocation.child("xcuserdata/" + currentUser + ".xcuserdatad/xcschemes").exists() ) {
 		schemeFilesDirList.add(projectLocation.child("xcuserdata/" + currentUser + ".xcuserdatad/xcschemes"));
@@ -56,15 +49,11 @@ public class XcodeProjectParser {
 		schemeFilesDirList.add(projectLocation.child("xcshareddata/xcschemes"));
 	    }
 	}
-	catch ( IOException ex ) {
+	catch (IOException | InterruptedException ex ) {
 	    ex.printStackTrace();
 	    schemeList = null;
 	}
-	catch ( InterruptedException ex ) {
-	    ex.printStackTrace();
-	    schemeList = null;
-	}
-	for ( FilePath schemeFilesDir : schemeFilesDirList ) {
+        for ( FilePath schemeFilesDir : schemeFilesDirList ) {
 	    try {
 		List<FilePath> files = schemeFilesDir.list(new XcodeSchemeFileFilter());
 		for ( FilePath file : files ) {
@@ -73,15 +62,11 @@ public class XcodeProjectParser {
 		    schemeList.put(schemeName, scheme);
 		}
 	    }
-	    catch ( IOException ex ) {
+	    catch (IOException | InterruptedException ex ) {
 		ex.printStackTrace();
 		schemeList = null;
 	    }
-	    catch ( InterruptedException ex ) {
-		ex.printStackTrace();
-		schemeList = null;
-	    }
-	}
+        }
 	return schemeList;
     }
 
@@ -94,7 +79,7 @@ public class XcodeProjectParser {
 	try {
 	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
-	    String FEATURE = null;
+	    String FEATURE;
 	    FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
 	    factory.setFeature(FEATURE, true);
 	    FEATURE = "http://xml.org/sax/features/external-general-entities";
@@ -117,9 +102,7 @@ public class XcodeProjectParser {
 		    if ( node.getNodeType() == Node.ELEMENT_NODE ) {
 			Element element = (Element)node;
 			if ( element.getNodeName().equals("BuildAction") ) {
-			    //projectScheme.parallelizeBuildables = element.getAttribute("parallelizeBuildables");
-			    //projectScheme.buildImplicitDependencies = element.getAttribute("buildImplicitDependencies");
-			    NodeList buildActionNodes = element.getChildNodes();
+                NodeList buildActionNodes = element.getChildNodes();
 			    for ( int j = 0; j < buildActionNodes.getLength(); j++ ) {
 				node = buildActionNodes.item(j);
 				if ( node.getNodeType() == Node.ELEMENT_NODE ) {
@@ -131,21 +114,13 @@ public class XcodeProjectParser {
 					    if ( node.getNodeType() == Node.ELEMENT_NODE ) {
 						element = (Element)node;
 						if ( element.getNodeName().equals("BuildActionEntry") ) {
-						    //projectScheme.buildForTesting = element.getAttribute("buildForTesting");
-						    //projectScheme.buildForRunning = element.getAttribute("buildForRunning");
-						    //projectScheme.buildForProfiling = element.getAttribute("buildForProfiling");
-						    //projectScheme.buildForArchiving = element.getAttribute("buildForArchiving");
-						    //projectScheme.buildForAnalyzing = element.getAttribute("buildForAnalyzing");
-						    NodeList buildActionEntryNodes = element.getChildNodes();
+                            NodeList buildActionEntryNodes = element.getChildNodes();
 						    for ( int l = 0; l < buildActionEntryNodes.getLength(); l++ ) {
 							node = buildActionEntryNodes.item(l);
 							if ( node.getNodeType() == Node.ELEMENT_NODE ) {
 							    element = (Element)node;
 							    if ( element.getNodeName().equals("BuildableReference") ) {
-								//projectScheme.buildableIdentifier = element.getAttribute("BuildableIdentifier");
-								//projectScheme.blueprintIdentifier = element.getAttribute("BlueprintIdentifier");
-								//projectScheme.buildableName = element.getAttribute("BuildableName");
-								projectScheme.blueprintName = element.getAttribute("BlueprintName");
+                                    projectScheme.blueprintName = element.getAttribute("BlueprintName");
 								projectScheme.referencedContainer = element.getAttribute("ReferencedContainer");
 							    }
 							}
@@ -161,23 +136,11 @@ public class XcodeProjectParser {
 		}
 	    }
 	}
-	catch (SAXException ex) {
+	catch (SAXException | IOException | ParserConfigurationException | InterruptedException ex) {
 	    ex.printStackTrace();
 	    projectScheme = null;
 	}
-	catch (IOException ex) {
-	    ex.printStackTrace();
-	    projectScheme = null;
-	}
-	catch (ParserConfigurationException ex) {
-	    ex.printStackTrace();
-	    projectScheme = null;
-	}
-        catch ( InterruptedException ex ) {
-            ex.printStackTrace();
-            projectScheme = null;
-        }
-	return projectScheme;
+        return projectScheme;
     }
     
     /**
@@ -190,7 +153,7 @@ public class XcodeProjectParser {
 	    FilePath workspaceFilePath = workspaceFileLocation.child("contents.xcworkspacedata");
 	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
-	    String FEATURE = null;
+	    String FEATURE;
 	    FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
 	    factory.setFeature(FEATURE, true);
 	    FEATURE = "http://xml.org/sax/features/external-general-entities";
@@ -224,23 +187,11 @@ public class XcodeProjectParser {
 		}
 	    }
 	}
-	catch (SAXException ex) {
+	catch (SAXException | IOException | ParserConfigurationException | InterruptedException ex) {
 	    ex.printStackTrace();
 	    projectList = null;
 	}
-	catch (IOException ex) {
-	    ex.printStackTrace();
-	    projectList = null;
-	}
-	catch (ParserConfigurationException ex) {
-	    ex.printStackTrace();
-	    projectList = null;
-	}
-        catch ( InterruptedException ex ) {
-            ex.printStackTrace();
-            projectList = null;
-        }
-	return projectList;
+        return projectList;
     }
 
     /**
@@ -323,30 +274,11 @@ public class XcodeProjectParser {
 		}
 	    }
 	}
-	catch ( IOException ex ) {
+	catch (IOException | PropertyListFormatException | ParseException | ParserConfigurationException | SAXException |
+           InterruptedException ex ) {
 	    ex.printStackTrace();
 	    project = null;
 	}
-        catch ( PropertyListFormatException ex ) {
-            ex.printStackTrace();
-            project = null;
-        }
-        catch ( ParseException ex ) {
-            ex.printStackTrace();
-            project = null;
-        }
-        catch ( ParserConfigurationException ex ) {
-            ex.printStackTrace();
-            project = null;
-        }
-        catch ( SAXException ex ) {
-            ex.printStackTrace();
-            project = null;
-        }
-	catch ( InterruptedException ex ) {
-	    ex.printStackTrace();
-	    project = null;
-	}
-	return project;
+        return project;
     }
 }

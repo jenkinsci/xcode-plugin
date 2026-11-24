@@ -4,7 +4,6 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.Extension;
 import hudson.security.ACL;
-import hudson.util.IOUtils;
 import hudson.util.Secret;
 
 import java.io.ByteArrayInputStream;
@@ -29,6 +28,7 @@ import javax.naming.ldap.Rdn;
 import jenkins.security.ConfidentialKey;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.io.IOUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.cloudbees.plugins.credentials.CredentialsScope;
@@ -146,3 +146,4 @@ public class DeveloperProfile extends BaseStandardCredentials {
 	return CredentialsProvider.lookupCredentials(DeveloperProfile.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.<DomainRequirement>emptyList());
     }
 }
+//

@@ -23,7 +23,6 @@
  */
 package au.com.rayh;
 
-import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -127,7 +126,7 @@ public class KeychainPasswordAndPathImpl extends BaseStandardCredentials impleme
     }
 
     /**
-     * Add keyc hain to search path.
+     * Add keychain to search path.
      * @return check is inSearchPath equals "true".
      */
     public boolean isInSearchPath() {
@@ -158,8 +157,8 @@ public class KeychainPasswordAndPathImpl extends BaseStandardCredentials impleme
         */
     }
 
-    public static List<KeychainPasswordAndPathImpl> getAllKeycainInfo() {
-        return CredentialsProvider.lookupCredentials(KeychainPasswordAndPathImpl.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.<DomainRequirement>emptyList());
+    public static List<KeychainPasswordAndPathImpl> getAllKeychainInfo() {
+        return CredentialsProvider.lookupCredentials(KeychainPasswordAndPathImpl.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.emptyList());
     }
 
 }

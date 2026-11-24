@@ -21,7 +21,6 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -35,7 +34,6 @@ import java.util.UUID;
 /**
  * Installs {@link DeveloperProfile} into the current slave and unlocks its keychain
  * in preparation for the signing that uses it.
- *
  * TODO: destroy identity in the end.
  *
  * @author Kohsuke Kawaguchi

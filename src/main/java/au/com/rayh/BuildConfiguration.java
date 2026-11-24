@@ -1,12 +1,6 @@
 package au.com.rayh;
 
-import com.dd.plist.NSDictionary; 
-import com.dd.plist.NSArray;
-import com.dd.plist.NSNumber;
-import com.dd.plist.NSObject;
-import com.dd.plist.NSString;
-import com.dd.plist.PropertyListFormatException; 
-import com.dd.plist.PropertyListParser; 
+import com.dd.plist.NSDictionary;
 
 public class BuildConfiguration {
   public String uuid;
@@ -20,9 +14,9 @@ public class BuildConfiguration {
   public String productName;
 
   BuildConfiguration(NSDictionary objectsDict, String buildConfigurationUUID, Boolean automatic) {
-    NSDictionary buildConfigurationDict = ((NSDictionary)objectsDict.objectForKey(buildConfigurationUUID.toString()));
+    NSDictionary buildConfigurationDict = ((NSDictionary)objectsDict.objectForKey(buildConfigurationUUID));
     //String baseConfigurationReference = buildConfigurationDict.objectForKey("baseConfigurationReference").toString();
-    this.uuid = buildConfigurationUUID.toString();
+    this.uuid = buildConfigurationUUID;
     this.name = buildConfigurationDict.objectForKey("name").toString();
     System.out.println("buildConfigurationUUID: " + this.uuid);
     NSDictionary buildSettingsDict = ((NSDictionary)buildConfigurationDict.objectForKey("buildSettings"));
@@ -47,8 +41,5 @@ public class BuildConfiguration {
       this.provisioningProfileUUID = buildSettingsDict.objectForKey("PROVISIONING_PROFILE").toString();
       this.provisioningProfileSpecifier = buildSettingsDict.objectForKey("PROVISIONING_PROFILE_SPECIFIER").toString();
     }
-    //else {
-    //  this.codeSignStyle = "Automatic";
-    //}
   }
 }

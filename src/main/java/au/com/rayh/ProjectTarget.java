@@ -19,7 +19,7 @@ public class ProjectTarget {
         testTargetID = null;
 	defaultConfigurationName = null;
 	
-	buildConfiguration = new HashMap<String, BuildConfiguration>();
+	buildConfiguration = new HashMap<>();
     }
 }
 
