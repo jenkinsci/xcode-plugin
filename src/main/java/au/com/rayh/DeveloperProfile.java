@@ -107,7 +107,7 @@ public class DeveloperProfile extends BaseStandardCredentials {
     }
 
     public String getDisplayNameOf(X509Certificate p) {
-        String name = p.getSubjectDN().getName();
+        String name = p.getSubjectX500Principal().getName();
         try {
             LdapName n = new LdapName(name);
             for (Rdn rdn : n.getRdns()) {
