@@ -103,9 +103,8 @@ public class XcodeXipInstaller extends ToolInstaller {
         dir.mkdirs();
 
         if (!isXipAvailable(node)) {
-            throw new AbortException(
-                    "Xcode .xip extraction is only supported on macOS nodes with /usr/bin/xip. "
-                            + "Node '" + node.getDisplayName() + "' does not have /usr/bin/xip.");
+            throw new AbortException("Xcode .xip extraction is only supported on macOS nodes with /usr/bin/xip. "
+                    + "Node '" + node.getDisplayName() + "' does not have /usr/bin/xip.");
         }
 
         String cacheMarker = url + (subdir != null ? "|" + subdir : "");
@@ -115,7 +114,8 @@ public class XcodeXipInstaller extends ToolInstaller {
             if (installed.equals(cacheMarker)) {
                 FilePath resolved = resolveHome(dir);
                 if (resolved.exists()) {
-                    log.getLogger().println("[Xcode] Xcode already installed from " + url + " at " + resolved.getRemote());
+                    log.getLogger()
+                            .println("[Xcode] Xcode already installed from " + url + " at " + resolved.getRemote());
                     ensureFirstLaunchIfEnabled(resolved, node, log);
                     return resolved;
                 }
@@ -128,7 +128,9 @@ public class XcodeXipInstaller extends ToolInstaller {
         FilePath archiveToExtract;
         boolean deleteArchiveAfterExtract = false;
         if (localArchive != null && localArchive.exists()) {
-            log.getLogger().println("[Xcode] Using local .xip archive on " + node.getDisplayName() + ": " + localArchive.getRemote());
+            log.getLogger()
+                    .println("[Xcode] Using local .xip archive on " + node.getDisplayName() + ": "
+                            + localArchive.getRemote());
             archiveToExtract = localArchive;
         } else {
             archiveToExtract = dir.child("xcode_installer.xip");
@@ -148,10 +150,9 @@ public class XcodeXipInstaller extends ToolInstaller {
 
         FilePath resolved = resolveHome(dir);
         if (!resolved.exists()) {
-            throw new AbortException(
-                    "Extracted .xip archive, but expected Xcode developer directory was not found at "
-                            + resolved.getRemote()
-                            + ". Check the 'Subdirectory within archive' setting.");
+            throw new AbortException("Extracted .xip archive, but expected Xcode developer directory was not found at "
+                    + resolved.getRemote()
+                    + ". Check the 'Subdirectory within archive' setting.");
         }
 
         markerFile.write(cacheMarker, "UTF-8");
@@ -235,28 +236,29 @@ public class XcodeXipInstaller extends ToolInstaller {
             }
 
             if (checkLicenseStatus(developerDir, node, log) != 0) {
-                log.getLogger().println(
-                        "[Xcode] Running 'sudo -n /usr/bin/xcodebuild -license accept' for DEVELOPER_DIR=" + devDir);
+                log.getLogger()
+                        .println("[Xcode] Running 'sudo -n /usr/bin/xcodebuild -license accept' for DEVELOPER_DIR="
+                                + devDir);
                 int licenseExit = executeSudoLicenseAccept(developerDir, node, log);
                 if (licenseExit != 0) {
-                    throw new AbortException(
-                            "Failed to run 'sudo -n /usr/bin/xcodebuild -license accept' (exit code "
-                                    + licenseExit
-                                    + "). Ensure passwordless sudo is configured for '/usr/bin/xcodebuild -license accept, "
-                                    + "/usr/bin/xcodebuild -runFirstLaunch' with 'Defaults env_keep += \"DEVELOPER_DIR\"', "
-                                    + "or disable the first-launch sudo option.");
+                    throw new AbortException("Failed to run 'sudo -n /usr/bin/xcodebuild -license accept' (exit code "
+                            + licenseExit
+                            + "). Ensure passwordless sudo is configured for '/usr/bin/xcodebuild -license accept, "
+                            + "/usr/bin/xcodebuild -runFirstLaunch' with 'Defaults env_keep += \"DEVELOPER_DIR\"', "
+                            + "or disable the first-launch sudo option.");
                 }
             }
 
-            log.getLogger().println("[Xcode] Running 'sudo -n /usr/bin/xcodebuild -runFirstLaunch' for DEVELOPER_DIR=" + devDir);
+            log.getLogger()
+                    .println("[Xcode] Running 'sudo -n /usr/bin/xcodebuild -runFirstLaunch' for DEVELOPER_DIR="
+                            + devDir);
             int sudoExit = executeSudoRunFirstLaunch(developerDir, node, log);
             if (sudoExit != 0) {
-                throw new AbortException(
-                        "Failed to run 'sudo -n /usr/bin/xcodebuild -runFirstLaunch' (exit code "
-                                + sudoExit
-                                + "). Ensure passwordless sudo is configured for '/usr/bin/xcodebuild -license accept, "
-                                + "/usr/bin/xcodebuild -runFirstLaunch' with 'Defaults env_keep += \"DEVELOPER_DIR\"', "
-                                + "or disable the first-launch sudo option.");
+                throw new AbortException("Failed to run 'sudo -n /usr/bin/xcodebuild -runFirstLaunch' (exit code "
+                        + sudoExit
+                        + "). Ensure passwordless sudo is configured for '/usr/bin/xcodebuild -license accept, "
+                        + "/usr/bin/xcodebuild -runFirstLaunch' with 'Defaults env_keep += \"DEVELOPER_DIR\"', "
+                        + "or disable the first-launch sudo option.");
             }
 
             int recheckExit = checkFirstLaunchStatus(developerDir, node, log);
@@ -285,10 +287,7 @@ public class XcodeXipInstaller extends ToolInstaller {
     protected int checkLicenseStatus(FilePath developerDir, Node node, TaskListener log)
             throws IOException, InterruptedException {
         return runWithDeveloperDir(
-                developerDir,
-                new ArgumentListBuilder().add("/usr/bin/xcodebuild", "-license", "check"),
-                node,
-                log);
+                developerDir, new ArgumentListBuilder().add("/usr/bin/xcodebuild", "-license", "check"), node, log);
     }
 
     protected int executeSudoLicenseAccept(FilePath developerDir, Node node, TaskListener log)
@@ -333,13 +332,21 @@ public class XcodeXipInstaller extends ToolInstaller {
                 log.getLogger().println("[Xcode] Downloading .xip via curl on " + node.getDisplayName() + "...");
                 Launcher launcher = node.createLauncher(log);
                 ArgumentListBuilder curlArgs = getCurlCommandLine(downloadUrl, targetFile);
-                int exit = launcher.launch().cmds(curlArgs).stdout(log).stderr(log.getLogger()).join();
+                int exit = launcher.launch()
+                        .cmds(curlArgs)
+                        .stdout(log)
+                        .stderr(log.getLogger())
+                        .join();
                 if (exit == 0 && targetFile.exists() && targetFile.length() > 0) {
                     return;
                 }
-                log.getLogger().println("[Xcode] Direct curl download failed (exit code " + exit + "), streaming through controller...");
+                log.getLogger()
+                        .println("[Xcode] Direct curl download failed (exit code " + exit
+                                + "), streaming through controller...");
             } catch (IOException e) {
-                log.getLogger().println("[Xcode] Direct curl download failed (" + e.getMessage() + "), streaming through controller...");
+                log.getLogger()
+                        .println("[Xcode] Direct curl download failed (" + e.getMessage()
+                                + "), streaming through controller...");
             }
         }
 

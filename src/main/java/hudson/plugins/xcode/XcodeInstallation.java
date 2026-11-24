@@ -2,7 +2,6 @@ package hudson.plugins.xcode;
 
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.init.Initializer;
 import hudson.model.EnvironmentSpecific;
 import hudson.model.Node;
 import hudson.model.TaskListener;
@@ -11,30 +10,26 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolProperty;
 import hudson.util.FormValidation;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Logger;
-
-import static hudson.init.InitMilestone.EXTENSIONS_AUGMENTED;
-import java.util.logging.Level;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * Information about Xcode installation.
  *
  * @author Kazuhide Takahashi
  */
-public class XcodeInstallation extends ToolInstallation implements NodeSpecific<XcodeInstallation>, EnvironmentSpecific<XcodeInstallation> {
+public class XcodeInstallation extends ToolInstallation
+        implements NodeSpecific<XcodeInstallation>, EnvironmentSpecific<XcodeInstallation> {
 
     private boolean exportDeveloperDir;
 
@@ -60,18 +55,18 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
     }
 
     public static XcodeInstallation[] allInstallations() {
-	Jenkins instance = Jenkins.getInstance();
-	if ( instance != null ) {
-	    DescriptorImpl descriptor = instance.getDescriptorByType(DescriptorImpl.class);
-	    if ( descriptor != null ) {
-    		XcodeInstallation[] installations = descriptor.getInstallations();
-    		if ( installations != null ) {
-		    return installations;
-		}
-	    }
-    	}
- 	return new XcodeInstallation[0];
-   }
+        Jenkins instance = Jenkins.getInstance();
+        if (instance != null) {
+            DescriptorImpl descriptor = instance.getDescriptorByType(DescriptorImpl.class);
+            if (descriptor != null) {
+                XcodeInstallation[] installations = descriptor.getInstallations();
+                if (installations != null) {
+                    return installations;
+                }
+            }
+        }
+        return new XcodeInstallation[0];
+    }
 
     /**
      * getXcodebuild.
@@ -84,14 +79,15 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
 
     @Override
     public XcodeInstallation forNode(Node node, TaskListener log) throws IOException, InterruptedException {
-        XcodeInstallation resolved = new XcodeInstallation(getName(), translateFor(node, log), Collections.<ToolProperty<?>>emptyList());
+        XcodeInstallation resolved = new XcodeInstallation(getName(), translateFor(node, log), Collections.emptyList());
         resolved.setExportDeveloperDir(exportDeveloperDir);
         return resolved;
     }
 
     @Override
     public XcodeInstallation forEnvironment(EnvVars environment) {
-        XcodeInstallation resolved = new XcodeInstallation(getName(), environment.expand(getHome()), Collections.<ToolProperty<?>>emptyList());
+        XcodeInstallation resolved =
+                new XcodeInstallation(getName(), environment.expand(getHome()), Collections.emptyList());
         resolved.setExportDeveloperDir(exportDeveloperDir);
         return resolved;
     }
@@ -116,7 +112,8 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
     }
 
-    @Extension @Symbol("xcode")
+    @Extension
+    @Symbol("xcode")
     public static class DescriptorImpl extends ToolDescriptor<XcodeInstallation> {
 
         public DescriptorImpl() {
@@ -129,7 +126,7 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+        public boolean configure(StaplerRequest2 req, JSONObject json) throws FormException {
             setInstallations(req.bindJSONToList(clazz, json.get("tool")).toArray(new XcodeInstallation[0]));
             save();
             return true;
@@ -164,8 +161,8 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         }
 
         public XcodeInstallation getInstallation(String name) {
-            for(XcodeInstallation i : getInstallations()) {
-                if(i.getName().equals(name)) {
+            for (XcodeInstallation i : getInstallations()) {
+                if (i.getName().equals(name)) {
                     return i;
                 }
             }

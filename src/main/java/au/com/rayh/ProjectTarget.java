@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class ProjectTarget {
     public String uuid;
-    //public String name;
+    // public String name;
     public String productType;
     public String provisioningStyle;
     public String testTargetID;
@@ -12,14 +12,13 @@ public class ProjectTarget {
     public HashMap<String, BuildConfiguration> buildConfiguration;
 
     ProjectTarget() {
-	uuid = null;
-	//name = null;
-	productType = null;
-	provisioningStyle = null;
+        uuid = null;
+        // name = null;
+        productType = null;
+        provisioningStyle = null;
         testTargetID = null;
-	defaultConfigurationName = null;
-	
-	buildConfiguration = new HashMap<String, BuildConfiguration>();
+        defaultConfigurationName = null;
+
+        buildConfiguration = new HashMap<>();
     }
 }
-

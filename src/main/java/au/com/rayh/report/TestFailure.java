@@ -24,28 +24,25 @@
 
 package au.com.rayh.report;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 
-@XmlType(name="failure")
+@XmlType(name = "failure")
 @XmlAccessorType(XmlAccessType.NONE)
 public class TestFailure {
     @XmlAttribute
     String message;
-    
+
     @XmlAttribute
     String type = "Failure";
-    
+
     @XmlValue
     String location;
 
-    public TestFailure() {
-    }
+    public TestFailure() {}
 
     public TestFailure(String message, String location) {
         this.message = message;
@@ -59,5 +56,4 @@ public class TestFailure {
     public String getLocation() {
         return location;
     }
-    
 }

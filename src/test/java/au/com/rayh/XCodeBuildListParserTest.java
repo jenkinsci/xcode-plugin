@@ -1,7 +1,7 @@
 package au.com.rayh;
 
-import org.junit.Assert;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -9,10 +9,10 @@ import org.junit.Test;
  */
 public class XCodeBuildListParserTest {
 
-
     @Test
     public void testValidOutput() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-valid.txt")));
+        String xcodeBuildOutput =
+                FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-valid.txt")));
 
         XcodeBuildListParser parser = new XcodeBuildListParser(xcodeBuildOutput);
 
@@ -28,7 +28,6 @@ public class XCodeBuildListParserTest {
         Assert.assertTrue(parser.getConfigurations().contains("BuildConfiguration2"));
         Assert.assertTrue(parser.getSchemes().contains("SampleScheme1"));
         Assert.assertTrue(parser.getSchemes().contains("SampleScheme2"));
-
     }
 
     @Test
@@ -38,42 +37,41 @@ public class XCodeBuildListParserTest {
         Assert.assertEquals(0, parser.getTargets().size());
         Assert.assertEquals(0, parser.getConfigurations().size());
         Assert.assertEquals(0, parser.getSchemes().size());
-
     }
 
     @Test
     public void testInvalidOutputEmpty() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-invalid1.txt")));
+        String xcodeBuildOutput = FileUtils.readFileToString(
+                FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-invalid1.txt")));
 
         XcodeBuildListParser parser = new XcodeBuildListParser("");
 
         Assert.assertEquals(0, parser.getTargets().size());
         Assert.assertEquals(0, parser.getConfigurations().size());
         Assert.assertEquals(0, parser.getSchemes().size());
-
     }
 
     @Test
     public void testInvalidOutputExtraLine() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-invalid1.txt")));
+        String xcodeBuildOutput = FileUtils.readFileToString(
+                FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-invalid1.txt")));
 
         XcodeBuildListParser parser = new XcodeBuildListParser(xcodeBuildOutput);
 
         Assert.assertEquals(0, parser.getTargets().size());
         Assert.assertEquals(0, parser.getConfigurations().size());
         Assert.assertEquals(0, parser.getSchemes().size());
-
     }
 
     @Test
     public void testInvalidOutputMissngColon() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-invalid2.txt")));
+        String xcodeBuildOutput = FileUtils.readFileToString(
+                FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildlist-invalid2.txt")));
 
         XcodeBuildListParser parser = new XcodeBuildListParser(xcodeBuildOutput);
 
         Assert.assertEquals(0, parser.getTargets().size());
         Assert.assertEquals(0, parser.getConfigurations().size());
         Assert.assertEquals(0, parser.getSchemes().size());
-
     }
 }

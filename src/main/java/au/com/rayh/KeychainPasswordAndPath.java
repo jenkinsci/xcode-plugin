@@ -31,8 +31,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 import hudson.util.Secret;
 
-import java.io.IOException;
-
 /**
  * Credentials that have an ID, description and macOS Keychain password and path.
  *
@@ -44,8 +42,11 @@ public interface KeychainPasswordAndPath extends StandardCredentials, PasswordCr
      *
      */
     Secret getPassword();
+
     String getKeychainPath();
+
     boolean isInSearchPath();
+
     String getInSearchPath();
 
     /**
@@ -53,7 +54,7 @@ public interface KeychainPasswordAndPath extends StandardCredentials, PasswordCr
      *
      * @since 2.0.12
      */
-    public static class NameProvider extends CredentialsNameProvider<KeychainPasswordAndPath> {
+    class NameProvider extends CredentialsNameProvider<KeychainPasswordAndPath> {
 
         /**
          * {@inheritDoc}

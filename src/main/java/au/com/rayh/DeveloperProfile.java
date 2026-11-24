@@ -1,12 +1,14 @@
 package au.com.rayh;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.security.ACL;
-import hudson.util.IOUtils;
 import hudson.util.Secret;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -19,20 +21,13 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-
 import jenkins.security.ConfidentialKey;
-
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.io.IOUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 
 /**
  * Apple developer profile, which consists of any number of PKCS12 of the private key
@@ -47,12 +42,17 @@ public class DeveloperProfile extends BaseStandardCredentials {
     private Secret password;
 
     @DataBoundConstructor
-    public DeveloperProfile(@CheckForNull CredentialsScope scope, @CheckForNull String id, @CheckForNull String description,
-            Secret password, FileItem image) throws IOException {
+    public DeveloperProfile(
+            @CheckForNull CredentialsScope scope,
+            @CheckForNull String id,
+            @CheckForNull String description,
+            Secret password,
+            FileItem image)
+            throws IOException {
         super(scope, id, description);
         this.password = password;
 
-        if (image!=null) {
+        if (image != null) {
             // for added secrecy, store this in the confidential store
             new ConfidentialKeyImpl(id).store(image);
         }
@@ -60,7 +60,7 @@ public class DeveloperProfile extends BaseStandardCredentials {
 
     @Deprecated
     public DeveloperProfile(String id, String description, Secret password, FileItem image) throws IOException {
-        this(CredentialsScope.GLOBAL,id,description,password,image);
+        this(CredentialsScope.GLOBAL, id, description, password, image);
     }
 
     public Secret getPassword() {
@@ -107,12 +107,11 @@ public class DeveloperProfile extends BaseStandardCredentials {
     }
 
     public String getDisplayNameOf(X509Certificate p) {
-        String name = p.getSubjectDN().getName();
+        String name = p.getSubjectX500Principal().getName();
         try {
             LdapName n = new LdapName(name);
             for (Rdn rdn : n.getRdns()) {
-                if (rdn.getType().equalsIgnoreCase("CN"))
-                    return rdn.getValue().toString();
+                if (rdn.getType().equalsIgnoreCase("CN")) return rdn.getValue().toString();
             }
         } catch (InvalidNameException e) {
             // fall through
@@ -130,7 +129,7 @@ public class DeveloperProfile extends BaseStandardCredentials {
 
     static class ConfidentialKeyImpl extends ConfidentialKey {
         ConfidentialKeyImpl(String id) {
-            super(DeveloperProfile.class.getName()+"."+id);
+            super(DeveloperProfile.class.getName() + "." + id);
         }
 
         public void store(FileItem submitted) throws IOException {
@@ -143,6 +142,11 @@ public class DeveloperProfile extends BaseStandardCredentials {
     }
 
     public static List<DeveloperProfile> getAllProfiles() {
-	return CredentialsProvider.lookupCredentials(DeveloperProfile.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.<DomainRequirement>emptyList());
+        return CredentialsProvider.lookupCredentials(
+                DeveloperProfile.class,
+                (hudson.model.Item) null,
+                ACL.SYSTEM,
+                Collections.<DomainRequirement>emptyList());
     }
 }
+//

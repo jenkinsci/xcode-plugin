@@ -24,8 +24,6 @@
 
 package au.com.rayh.report;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,41 +35,40 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-@XmlRootElement(name="testsuite")
+@XmlRootElement(name = "testsuite")
 @XmlAccessorType(XmlAccessType.NONE)
 public class TestSuite {
     @XmlAttribute
     int failures;
-    
+
     @XmlAttribute
     int errors;
-    
+
     @XmlAttribute
     String hostname;
-    
+
     @XmlAttribute
     String name;
-    
+
     @XmlAttribute
     int tests;
-    
+
     @XmlAttribute
     float time;
-    
-    @XmlAttribute(name="timestamp")
+
+    @XmlAttribute(name = "timestamp")
     Date endTime;
-    
-    @XmlElement(name="testcase")
+
+    @XmlElement(name = "testcase")
     List<TestCase> testcases = new ArrayList<>();
 
     @XmlTransient
     Date startTime;
 
-    HashMap <String, TestCase> testCasesHash = new HashMap <String, TestCase>();
+    HashMap<String, TestCase> testCasesHash = new HashMap<String, TestCase>();
 
-    public TestSuite() {
-    }
-    
+    public TestSuite() {}
+
     public TestSuite(String hostname, String name, Date startTime) {
         this.hostname = hostname;
         this.name = name;
@@ -83,17 +80,17 @@ public class TestSuite {
     }
 
     public HashMap<String, TestCase> getTestCasesHash() {
-	return testCasesHash;
+        return testCasesHash;
     }
 
     public void setTestCasesHash(HashMap<String, TestCase> testCasesHash) {
-	this.testCasesHash = testCasesHash;
+        this.testCasesHash = testCasesHash;
     }
 
     public int getFailures() {
         return failures;
     }
-    
+
     public int getErrors() {
         return errors;
     }
@@ -103,17 +100,17 @@ public class TestSuite {
     }
 
     public void addFailure() {
-        failures+=1;
+        failures += 1;
     }
-    
+
     public void addError() {
-        errors+=1;
+        errors += 1;
     }
 
     public void addTest() {
-        tests+=1;
+        tests += 1;
     }
-    
+
     public String getName() {
         return name;
     }
@@ -124,11 +121,10 @@ public class TestSuite {
 
     public void setEndTime(Date endTime) {
         this.endTime = endTime;
-        this.time = (endTime.getTime() - startTime.getTime())/1000f;
+        this.time = (endTime.getTime() - startTime.getTime()) / 1000f;
     }
 
     public List<TestCase> getTestCases() {
         return testcases;
     }
-
 }

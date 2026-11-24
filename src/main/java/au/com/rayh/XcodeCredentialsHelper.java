@@ -3,13 +3,12 @@ package au.com.rayh;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.model.ItemGroup;
 import hudson.security.ACL;
 import hudson.util.ListBoxModel;
-import org.apache.commons.lang3.StringUtils;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import java.util.Collections;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author <a href="mailto:kazuhide.t@linux-powered.com">Kazuhide Takahashi</a>
@@ -24,8 +23,8 @@ public class XcodeCredentialsHelper {
             return null;
         }
         return (KeychainPasswordAndPath) CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(KeychainPasswordAndPath.class, context,
-                        ACL.SYSTEM, Collections.EMPTY_LIST),
+                CredentialsProvider.lookupCredentials(
+                        KeychainPasswordAndPath.class, context, ACL.SYSTEM, Collections.EMPTY_LIST),
                 CredentialsMatchers.withId(credentialsId));
     }
 
@@ -34,9 +33,7 @@ public class XcodeCredentialsHelper {
                 .withEmptySelection()
                 .withMatching(
                         CredentialsMatchers.always(),
-                        CredentialsProvider.lookupCredentials(KeychainPasswordAndPath.class,
-                                context,
-                                ACL.SYSTEM,
-                                Collections.EMPTY_LIST));
+                        CredentialsProvider.lookupCredentials(
+                                KeychainPasswordAndPath.class, context, ACL.SYSTEM, Collections.EMPTY_LIST));
     }
 }

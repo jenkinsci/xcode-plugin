@@ -32,32 +32,32 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import org.apache.commons.lang3.StringUtils;
-import org.jenkinsci.plugins.credentialsbinding.BindingDescriptor;
-import org.jenkinsci.plugins.credentialsbinding.MultiBinding;
-import org.kohsuke.stapler.DataBoundConstructor;
-
-import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
+import org.jenkinsci.plugins.credentialsbinding.BindingDescriptor;
+import org.jenkinsci.plugins.credentialsbinding.MultiBinding;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * @author <a href="mailto:kazuhide.t@linux-powered.com">Kazuhide Takahashi</a>
  */
 public class KeychainPasswordAndPathBinding extends MultiBinding<KeychainPasswordAndPath> {
 
-    public final static String DEFAULT_KEYCHAIN_PATH_VARIABLE_NAME = "KEYCHAIN_PATH";
-    private final static String DEFAULT_PASSWORD_VARIABLE_NAME = "PASSWORD";
-    private final static String DEFAULT_IN_SEARCH_PATH_VARIABLE_NAME = "IN_SEARCH_PATH";
+    public static final String DEFAULT_KEYCHAIN_PATH_VARIABLE_NAME = "KEYCHAIN_PATH";
+    private static final String DEFAULT_PASSWORD_VARIABLE_NAME = "PASSWORD";
+    private static final String DEFAULT_IN_SEARCH_PATH_VARIABLE_NAME = "IN_SEARCH_PATH";
 
     @NonNull
     private final String keychainPathVariable;
+
     @NonNull
     private final String passwordVariable;
+
     @NonNull
     private final String inSearchPathVariable;
 
@@ -69,11 +69,17 @@ public class KeychainPasswordAndPathBinding extends MultiBinding<KeychainPasswor
      * @param credentialsId identifier which should be referenced when accessing the credentials from a job/pipeline.
      */
     @DataBoundConstructor
-    public KeychainPasswordAndPathBinding(@Nullable String keychainPathVariable, @Nullable String passwordVariable, @Nullable String inSearchPathVariable, String credentialsId) {
+    public KeychainPasswordAndPathBinding(
+            @Nullable String keychainPathVariable,
+            @Nullable String passwordVariable,
+            @Nullable String inSearchPathVariable,
+            String credentialsId) {
         super(credentialsId);
-        this.keychainPathVariable = StringUtils.defaultIfBlank(keychainPathVariable, DEFAULT_KEYCHAIN_PATH_VARIABLE_NAME);
+        this.keychainPathVariable =
+                StringUtils.defaultIfBlank(keychainPathVariable, DEFAULT_KEYCHAIN_PATH_VARIABLE_NAME);
         this.passwordVariable = StringUtils.defaultIfBlank(passwordVariable, DEFAULT_PASSWORD_VARIABLE_NAME);
-        this.inSearchPathVariable = StringUtils.defaultIfBlank(inSearchPathVariable, DEFAULT_IN_SEARCH_PATH_VARIABLE_NAME);
+        this.inSearchPathVariable =
+                StringUtils.defaultIfBlank(inSearchPathVariable, DEFAULT_IN_SEARCH_PATH_VARIABLE_NAME);
     }
 
     @NonNull
@@ -97,9 +103,10 @@ public class KeychainPasswordAndPathBinding extends MultiBinding<KeychainPasswor
     }
 
     @Override
-    public MultiEnvironment bind(@NonNull Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
+    public MultiEnvironment bind(@NonNull Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener)
+            throws IOException, InterruptedException {
         KeychainPasswordAndPath credential = getCredentials(build);
-        Map<String,String> m = new HashMap<String,String>();
+        Map<String, String> m = new HashMap<>();
         m.put(keychainPathVariable, credential.getKeychainPath());
         m.put(passwordVariable, credential.getPassword().getPlainText());
         m.put(inSearchPathVariable, credential.getInSearchPath());
@@ -108,19 +115,20 @@ public class KeychainPasswordAndPathBinding extends MultiBinding<KeychainPasswor
 
     @Override
     public Set<String> variables() {
-        return new HashSet<String>(Arrays.asList(keychainPathVariable, passwordVariable, inSearchPathVariable));
+        return new HashSet<>(Arrays.asList(keychainPathVariable, passwordVariable, inSearchPathVariable));
     }
 
     @Extension
     public static class DescriptorImpl extends BindingDescriptor<KeychainPasswordAndPath> {
 
-        @Override protected Class<KeychainPasswordAndPath> type() {
+        @Override
+        protected Class<KeychainPasswordAndPath> type() {
             return KeychainPasswordAndPath.class;
         }
 
-        @Override public String getDisplayName() {
+        @Override
+        public String getDisplayName() {
             return Messages.KeychainPasswordAndPath_DisplayName();
         }
     }
-
 }

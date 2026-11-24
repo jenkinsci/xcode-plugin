@@ -24,6 +24,13 @@
 
 package hudson.plugins.xcode;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import hudson.EnvVars;
 import hudson.model.TaskListener;
 import hudson.tools.ToolInstallation;
@@ -32,13 +39,6 @@ import java.io.File;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class XcodeInstallationTest {
 
@@ -65,7 +65,8 @@ public class XcodeInstallationTest {
 
     @Test
     public void testXcodeInstallationProperties() {
-        XcodeInstallation installation = new XcodeInstallation("Xcode 15", "/Applications/Xcode.app/Contents/Developer", null);
+        XcodeInstallation installation =
+                new XcodeInstallation("Xcode 15", "/Applications/Xcode.app/Contents/Developer", null);
         assertEquals("Xcode 15", installation.getName());
         assertEquals("/Applications/Xcode.app/Contents/Developer", installation.getHome());
         assertEquals("/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild", installation.getXcodebuild());
@@ -99,7 +100,8 @@ public class XcodeInstallationTest {
 
     @Test
     public void testBuildEnvVarsDisabledByDefault() {
-        XcodeInstallation installation = new XcodeInstallation("Xcode 16", "/Applications/Xcode.app/Contents/Developer", null);
+        XcodeInstallation installation =
+                new XcodeInstallation("Xcode 16", "/Applications/Xcode.app/Contents/Developer", null);
         assertFalse(installation.isExportDeveloperDir());
 
         EnvVars env = new EnvVars();

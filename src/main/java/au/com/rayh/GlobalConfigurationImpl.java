@@ -23,26 +23,22 @@
  */
 package au.com.rayh;
 
-import net.sf.json.JSONObject;
-
-import org.apache.commons.lang3.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.AutoCompletionCandidates;
 import hudson.util.FormValidation;
-import jenkins.model.GlobalConfiguration;
-
+import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import javax.servlet.ServletException;
+import jenkins.model.GlobalConfiguration;
+import net.sf.json.JSONObject;
+import org.apache.commons.lang3.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * Stores global configuration for XCode.
@@ -52,19 +48,24 @@ import javax.servlet.ServletException;
 @Extension
 public final class GlobalConfigurationImpl extends GlobalConfiguration {
     private static final Logger LOGGER = Logger.getLogger(GlobalConfigurationImpl.class.getName());
+
     @CheckForNull
     private String xcodebuildPath = "/usr/bin/xcodebuild";
+
     @CheckForNull
     private String xcrunPath = "/usr/bin/xcrun";
+
     @CheckForNull
     private String agvtoolPath = "/usr/bin/agvtool";
     // No one uses defaultKeychain.
     @Deprecated
     @CheckForNull
     private String defaultKeychain = "";
+
     @Deprecated
     @CheckForNull
     private ArrayList<Keychain> keychains = new ArrayList<>();
+
     @Deprecated
     @CheckForNull
     private ArrayList<Team> teams = new ArrayList<>();
@@ -119,7 +120,7 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
 
     @Deprecated
     public ArrayList<Keychain> getKeychains() {
-	return keychains == null ? keychains : new ArrayList<Keychain>();
+        return keychains == null ? keychains : new ArrayList<>();
     }
 
     @Deprecated
@@ -137,11 +138,17 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
     public GlobalConfigurationImpl() {
         super();
         load();
-	LOGGER.fine("[Xcode] Default constructor: " + getKeychains().size());
+        LOGGER.fine("[Xcode] Default constructor: " + getKeychains().size());
     }
 
     @Deprecated
-    public GlobalConfigurationImpl(String xcodebuildPath, String xcrunPath, String agvtoolPath, String defaultKeychain, ArrayList<Keychain> keychains, ArrayList<Team> teams) {
+    public GlobalConfigurationImpl(
+            String xcodebuildPath,
+            String xcrunPath,
+            String agvtoolPath,
+            String defaultKeychain,
+            ArrayList<Keychain> keychains,
+            ArrayList<Team> teams) {
         this();
 
         this.setXcodebuildPath(xcodebuildPath);
@@ -152,13 +159,18 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
         this.setTeams(teams);
 
         LOGGER.fine("[Xcode] DataBoundConstructor: keychains.size " + keychains.size());
-        if(teams != null) {
+        if (teams != null) {
             LOGGER.fine("[Xcode] DataBoundConstructor: teams.size " + teams.size());
         }
     }
 
     @Deprecated
-    public GlobalConfigurationImpl(String xcodebuildPath, String xcrunPath, String agvtoolPath, String defaultKeychain, ArrayList<Keychain> keychains) {
+    public GlobalConfigurationImpl(
+            String xcodebuildPath,
+            String xcrunPath,
+            String agvtoolPath,
+            String defaultKeychain,
+            ArrayList<Keychain> keychains) {
         this(xcodebuildPath, xcrunPath, agvtoolPath, defaultKeychain, keychains, null);
     }
 
@@ -230,7 +242,7 @@ public final class GlobalConfigurationImpl extends GlobalConfiguration {
     }
 
     @Override
-    public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+    public boolean configure(StaplerRequest2 req, JSONObject formData) throws FormException {
         req.bindJSON(this, formData);
         setKeychains(new ArrayList<>(req.bindParametersToList(Keychain.class, "keychain.")));
         setTeams(new ArrayList<>(req.bindParametersToList(Team.class, "team.")));
