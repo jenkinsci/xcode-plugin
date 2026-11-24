@@ -15,6 +15,7 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -35,6 +36,8 @@ import java.util.logging.Level;
  */
 public class XcodeInstallation extends ToolInstallation implements NodeSpecific<XcodeInstallation>, EnvironmentSpecific<XcodeInstallation> {
 
+    private boolean exportDeveloperDir;
+
     /**
      * Constructor for XcodeInstallation.
      *
@@ -45,6 +48,15 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
     @DataBoundConstructor
     public XcodeInstallation(String name, String home, List<? extends ToolProperty<?>> properties) {
         super(name, home, properties);
+    }
+
+    public boolean isExportDeveloperDir() {
+        return exportDeveloperDir;
+    }
+
+    @DataBoundSetter
+    public void setExportDeveloperDir(boolean exportDeveloperDir) {
+        this.exportDeveloperDir = exportDeveloperDir;
     }
 
     public static XcodeInstallation[] allInstallations() {
@@ -70,12 +82,28 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         return getHome() + "/usr/bin/xcodebuild";
     }
 
+    @Override
     public XcodeInstallation forNode(Node node, TaskListener log) throws IOException, InterruptedException {
-        return new XcodeInstallation(getName(), translateFor(node, log), Collections.<ToolProperty<?>>emptyList());
+        XcodeInstallation resolved = new XcodeInstallation(getName(), translateFor(node, log), Collections.<ToolProperty<?>>emptyList());
+        resolved.setExportDeveloperDir(exportDeveloperDir);
+        return resolved;
     }
 
+    @Override
     public XcodeInstallation forEnvironment(EnvVars environment) {
-        return new XcodeInstallation(getName(), environment.expand(getHome()), Collections.<ToolProperty<?>>emptyList());
+        XcodeInstallation resolved = new XcodeInstallation(getName(), environment.expand(getHome()), Collections.<ToolProperty<?>>emptyList());
+        resolved.setExportDeveloperDir(exportDeveloperDir);
+        return resolved;
+    }
+
+    @Override
+    public void buildEnvVars(EnvVars env) {
+        if (exportDeveloperDir) {
+            String home = getHome();
+            if (home != null && !home.trim().isEmpty()) {
+                env.put("DEVELOPER_DIR", home);
+            }
+        }
     }
 
     @Override
@@ -108,10 +136,31 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         }
 
         public FormValidation doCheckHome(@QueryParameter File value) {
-            Jenkins.getInstance().checkPermission(Jenkins.ADMINISTER);
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+            if (value == null || value.getPath().trim().isEmpty()) {
+                return FormValidation.ok();
+            }
             String path = value.getPath() + "/usr/bin/xcodebuild";
 
             return FormValidation.validateExecutable(path);
+        }
+
+        @Override
+        public XcodeInstallation[] getInstallations() {
+            ToolInstallation[] raw = super.getInstallations();
+            if (raw == null) {
+                return new XcodeInstallation[0];
+            }
+            if (raw instanceof XcodeInstallation[]) {
+                return (XcodeInstallation[]) raw;
+            }
+            List<XcodeInstallation> list = new ArrayList<>(raw.length);
+            for (ToolInstallation ti : raw) {
+                if (ti instanceof XcodeInstallation) {
+                    list.add((XcodeInstallation) ti);
+                }
+            }
+            return list.toArray(new XcodeInstallation[0]);
         }
 
         public XcodeInstallation getInstallation(String name) {
