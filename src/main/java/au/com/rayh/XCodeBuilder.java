@@ -1124,18 +1124,8 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
 
         if (!StringUtils.isEmpty(this.xcodeName)) {
-            Jenkins jenkinsInstance = Jenkins.getInstance();
-            XcodeInstallation.DescriptorImpl descriptor = (XcodeInstallation.DescriptorImpl)jenkinsInstance.getDescriptor(XcodeInstallation.class);
-            XcodeInstallation[] installations = descriptor.getInstallations();
-            if ( installations != null ) {
-                for ( XcodeInstallation installation : installations ) {
-                    if ( installation.getName().equals(this.xcodeName) ) {
-                        envs.put("DEVELOPER_DIR", installation.getHome());
-			listener.getLogger().println(Messages.XCodeBuilder_XcodeToolsDir(installation.getHome()));
-                        break;
-                    }
-                }
-            }
+            resolveAndApplyXcodeDeveloperDir(
+                    this.xcodeName, resolveExecutionNode(build, projectRoot), envs, listener);
         }
 
         // Infer as best we can the build platform
@@ -2133,6 +2123,63 @@ public class XCodeBuilder extends Builder implements SimpleBuildStep {
         }
 
         return null;
+    }
+
+    @CheckForNull
+    static Node resolveExecutionNode(@CheckForNull Run<?, ?> build, @CheckForNull FilePath projectRoot) {
+        if (build instanceof AbstractBuild<?, ?>) {
+            Node builtOn = ((AbstractBuild<?, ?>) build).getBuiltOn();
+            if (builtOn != null) {
+                return builtOn;
+            }
+        }
+        if (projectRoot != null) {
+            Computer computer = projectRoot.toComputer();
+            if (computer != null) {
+                return computer.getNode();
+            }
+        }
+        return null;
+    }
+
+    @CheckForNull
+    static String resolveAndApplyXcodeDeveloperDir(
+            @CheckForNull String name,
+            @CheckForNull Node node,
+            EnvVars envs,
+            TaskListener listener)
+            throws IOException, InterruptedException {
+        if (StringUtils.isEmpty(name)) {
+            return null;
+        }
+        Jenkins jenkinsInstance = Jenkins.getInstanceOrNull();
+        if (jenkinsInstance == null) {
+            return null;
+        }
+        XcodeInstallation.DescriptorImpl descriptor =
+                (XcodeInstallation.DescriptorImpl) jenkinsInstance.getDescriptor(XcodeInstallation.class);
+        if (descriptor == null) {
+            return null;
+        }
+        XcodeInstallation installation = descriptor.getInstallation(name);
+        if (installation == null) {
+            return null;
+        }
+        if (node != null) {
+            installation = installation.forNode(node, listener);
+        }
+        installation = installation.forEnvironment(envs);
+        String xcodeHome = installation.getHome();
+        if (StringUtils.isEmpty(xcodeHome)) {
+            throw new AbortException(
+                    "Configured Xcode installation '"
+                            + name
+                            + "' resolved to an empty home directory. "
+                            + "Verify its installation path or automatic installer configuration.");
+        }
+        envs.put("DEVELOPER_DIR", xcodeHome);
+        listener.getLogger().println(Messages.XCodeBuilder_XcodeToolsDir(xcodeHome));
+        return xcodeHome;
     }
 
     static List<String> splitXcodeBuildArguments(String xcodebuildArguments) {
