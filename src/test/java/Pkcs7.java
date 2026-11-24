@@ -1,8 +1,7 @@
-import org.apache.commons.io.IOUtils;
-import org.bouncycastle.cms.CMSSignedData;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import org.apache.commons.io.IOUtils;
+import org.bouncycastle.cms.CMSSignedData;
 
 /**
  * @author Kohsuke Kawaguchi

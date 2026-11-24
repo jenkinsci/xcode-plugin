@@ -1,7 +1,7 @@
 package au.com.rayh;
 
-import org.junit.Assert;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -11,7 +11,8 @@ public class XCodeBuildHelpParserTest {
 
     @Test
     public void testValidOutput() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildhelp-valid.txt")));
+        String xcodeBuildOutput =
+                FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildhelp-valid.txt")));
         XcodeBuildHelpParser parser = new XcodeBuildHelpParser(xcodeBuildOutput);
         Assert.assertEquals(2, parser.getParameters().size());
         Assert.assertTrue(parser.getParameters().contains("-SampleTarget1"));
@@ -26,14 +27,16 @@ public class XCodeBuildHelpParserTest {
 
     @Test
     public void testInvalidOutputEmpty() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildhelp-invalid.txt")));
+        String xcodeBuildOutput = FileUtils.readFileToString(
+                FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildhelp-invalid.txt")));
         XcodeBuildHelpParser parser = new XcodeBuildHelpParser("");
         Assert.assertEquals(0, parser.getParameters().size());
     }
 
     @Test
     public void testInvalidOutputExtraLine() throws Throwable {
-        String xcodeBuildOutput = FileUtils.readFileToString(FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildhelp-invalid.txt")));
+        String xcodeBuildOutput = FileUtils.readFileToString(
+                FileUtils.toFile(ClassLoader.getSystemResource("xcodebuildhelp-invalid.txt")));
         XcodeBuildHelpParser parser = new XcodeBuildHelpParser(xcodeBuildOutput);
         Assert.assertEquals(0, parser.getParameters().size());
     }

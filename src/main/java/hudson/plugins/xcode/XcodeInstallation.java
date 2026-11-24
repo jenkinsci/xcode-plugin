@@ -10,6 +10,11 @@ import hudson.tools.ToolDescriptor;
 import hudson.tools.ToolInstallation;
 import hudson.tools.ToolProperty;
 import hudson.util.FormValidation;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
@@ -18,18 +23,13 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest2;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Information about Xcode installation.
  *
  * @author Kazuhide Takahashi
  */
-public class XcodeInstallation extends ToolInstallation implements NodeSpecific<XcodeInstallation>, EnvironmentSpecific<XcodeInstallation> {
+public class XcodeInstallation extends ToolInstallation
+        implements NodeSpecific<XcodeInstallation>, EnvironmentSpecific<XcodeInstallation> {
 
     private boolean exportDeveloperDir;
 
@@ -55,18 +55,18 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
     }
 
     public static XcodeInstallation[] allInstallations() {
-	Jenkins instance = Jenkins.getInstance();
-	if ( instance != null ) {
-	    DescriptorImpl descriptor = instance.getDescriptorByType(DescriptorImpl.class);
-	    if ( descriptor != null ) {
-    		XcodeInstallation[] installations = descriptor.getInstallations();
-    		if ( installations != null ) {
-		    return installations;
-		}
-	    }
-    	}
- 	return new XcodeInstallation[0];
-   }
+        Jenkins instance = Jenkins.getInstance();
+        if (instance != null) {
+            DescriptorImpl descriptor = instance.getDescriptorByType(DescriptorImpl.class);
+            if (descriptor != null) {
+                XcodeInstallation[] installations = descriptor.getInstallations();
+                if (installations != null) {
+                    return installations;
+                }
+            }
+        }
+        return new XcodeInstallation[0];
+    }
 
     /**
      * getXcodebuild.
@@ -86,7 +86,8 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
 
     @Override
     public XcodeInstallation forEnvironment(EnvVars environment) {
-        XcodeInstallation resolved = new XcodeInstallation(getName(), environment.expand(getHome()), Collections.emptyList());
+        XcodeInstallation resolved =
+                new XcodeInstallation(getName(), environment.expand(getHome()), Collections.emptyList());
         resolved.setExportDeveloperDir(exportDeveloperDir);
         return resolved;
     }
@@ -111,7 +112,8 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         return (DescriptorImpl) jenkinsInstance.getDescriptorOrDie(getClass());
     }
 
-    @Extension @Symbol("xcode")
+    @Extension
+    @Symbol("xcode")
     public static class DescriptorImpl extends ToolDescriptor<XcodeInstallation> {
 
         public DescriptorImpl() {
@@ -159,8 +161,8 @@ public class XcodeInstallation extends ToolInstallation implements NodeSpecific<
         }
 
         public XcodeInstallation getInstallation(String name) {
-            for(XcodeInstallation i : getInstallations()) {
-                if(i.getName().equals(name)) {
+            for (XcodeInstallation i : getInstallations()) {
+                if (i.getName().equals(name)) {
                     return i;
                 }
             }

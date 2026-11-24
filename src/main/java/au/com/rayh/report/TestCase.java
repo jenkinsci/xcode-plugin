@@ -24,8 +24,6 @@
 
 package au.com.rayh.report;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -34,26 +32,25 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType(name="testcase")
+@XmlType(name = "testcase")
 @XmlAccessorType(XmlAccessType.NONE)
 public class TestCase {
     @XmlAttribute
     String classname;
-    
+
     @XmlAttribute
     String name;
-    
+
     @XmlAttribute
     float time;
-    
-    @XmlElement(name="failure")
+
+    @XmlElement(name = "failure")
     List<TestFailure> failures = new ArrayList<>();
-    
-    @XmlElement(name="error")
+
+    @XmlElement(name = "error")
     List<TestError> errors = new ArrayList<>();
 
-    public TestCase() {
-    }
+    public TestCase() {}
 
     public TestCase(String classname, String name) {
         this.classname = classname;
@@ -75,7 +72,7 @@ public class TestCase {
     public List<TestFailure> getFailures() {
         return failures;
     }
-    
+
     public List<TestError> getErrors() {
         return errors;
     }

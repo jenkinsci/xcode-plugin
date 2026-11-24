@@ -32,12 +32,10 @@ package au.com.rayh;
 import hudson.FilePath;
 import hudson.Functions;
 import hudson.model.TaskListener;
-
 import java.io.BufferedOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -50,13 +48,14 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
     private OutputStream logFileOutputStream;
     private boolean ignoreTestResults;
 
-	public JenkinsXCodeBuildOutputParser(FilePath workspace, TaskListener buildListener) throws IOException, InterruptedException {
-		super();
+    public JenkinsXCodeBuildOutputParser(FilePath workspace, TaskListener buildListener)
+            throws IOException, InterruptedException {
+        super();
         this.buildListener = buildListener;
         this.captureOutputStream = new LineBasedFilterOutputStream();
         this.consoleLog = true;
         this.logFileOutputStream = null;
-	this.ignoreTestResults = false;
+        this.ignoreTestResults = false;
 
         testReportsDir = workspace.child("test-reports");
         testReportsDir.mkdirs();
@@ -67,30 +66,32 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
     }
 
     public void setIgnoreTestResults(boolean ignoreTestResults) {
-	this.ignoreTestResults = ignoreTestResults;
+        this.ignoreTestResults = ignoreTestResults;
     }
-    
-    public void setLogfilePath(final FilePath buildDirectory, final String logfileOutputDirectory) throws IOException, InterruptedException {
-	// Remove buildDirectory.exists() && buildDirectory.isDirectory() from condition.
-	// Because If Generate archive is not specified, directory was not created.
-        if(!StringUtils.isEmpty(logfileOutputDirectory)) {
-	    // Fix not to use timestamp for log file name. (Use "xcodebuild.log" as a fixed file name)
-	    // Because using a timestamp as a filename, No way to know it with a script etc.
+
+    public void setLogfilePath(final FilePath buildDirectory, final String logfileOutputDirectory)
+            throws IOException, InterruptedException {
+        // Remove buildDirectory.exists() && buildDirectory.isDirectory() from condition.
+        // Because If Generate archive is not specified, directory was not created.
+        if (!StringUtils.isEmpty(logfileOutputDirectory)) {
+            // Fix not to use timestamp for log file name. (Use "xcodebuild.log" as a fixed file name)
+            // Because using a timestamp as a filename, No way to know it with a script etc.
             FilePath logFilePath = buildDirectory.child(logfileOutputDirectory);
             // clean Directory
-            if(logFilePath.exists()) {
+            if (logFilePath.exists()) {
                 logFilePath.deleteRecursive();
             }
             // Create if non-existent
             if (!logFilePath.exists()) {
                 logFilePath.mkdirs();
             }
-            logFileOutputStream = new BufferedOutputStream(logFilePath.child("xcodebuild.log").write(),1024*512);
+            logFileOutputStream =
+                    new BufferedOutputStream(logFilePath.child("xcodebuild.log").write(), 1024 * 512);
         }
     }
-    
+
     public void closeLogfile() throws IOException {
-    	if(logFileOutputStream != null) {
+        if (logFileOutputStream != null) {
             logFileOutputStream.flush();
             logFileOutputStream.close();
             logFileOutputStream = null;
@@ -106,30 +107,30 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
 
         @Override
         public void write(int b) throws IOException {
-	    if ( !ignoreTestResults ) {
-                if((char)b == '\n') {
+            if (!ignoreTestResults) {
+                if ((char) b == '\n') {
                     try {
                         handleLine(buffer.toString());
                         buffer = new StringBuilder();
-                    } catch(Exception e) {  // Very fugly
+                    } catch (Exception e) { // Very fugly
                         Functions.printStackTrace(e, buildListener.fatalError(e.getMessage()));
                         throw new IOException(e);
                     }
                 } else {
-                    buffer.append((char)b);
+                    buffer.append((char) b);
                 }
-	    }
-            if(consoleLog) {
+            }
+            if (consoleLog) {
                 super.write(b);
             }
-            if(logFileOutputStream != null) {
+            if (logFileOutputStream != null) {
                 logFileOutputStream.write(b);
             }
         }
-        
+
         @Override
         public void close() throws IOException {
-            if(logFileOutputStream != null) {
+            if (logFileOutputStream != null) {
                 logFileOutputStream.flush();
                 logFileOutputStream.close();
                 logFileOutputStream = null;
@@ -138,9 +139,10 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
         }
     }
 
-	@Override
-	protected OutputStream outputForSuite() throws IOException,
-			InterruptedException {
-		return testReportsDir.child("TEST-" + currentTestSuite.getName() + ".xml").write();
-	}
+    @Override
+    protected OutputStream outputForSuite() throws IOException, InterruptedException {
+        return testReportsDir
+                .child("TEST-" + currentTestSuite.getName() + ".xml")
+                .write();
+    }
 }

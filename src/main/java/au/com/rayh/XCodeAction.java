@@ -15,5 +15,7 @@ public class XCodeAction extends InvisibleAction {
         this.buildDescription = buildDescription;
     }
 
-    public  String getBuildDescription() { return buildDescription; }
+    public String getBuildDescription() {
+        return buildDescription;
+    }
 }

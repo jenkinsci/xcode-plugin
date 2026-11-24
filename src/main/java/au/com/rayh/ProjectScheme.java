@@ -6,6 +6,6 @@ public class ProjectScheme {
 
     ProjectScheme() {
         blueprintName = null;
-	    referencedContainer = null;
+        referencedContainer = null;
     }
 }

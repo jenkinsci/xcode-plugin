@@ -24,20 +24,18 @@
 package au.com.rayh;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.Util;
 import hudson.security.ACL;
 import hudson.util.Secret;
-import org.kohsuke.stapler.DataBoundConstructor;
-import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
-import org.kohsuke.stapler.DataBoundSetter;
-
 import java.util.Collections;
 import java.util.List;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 /**
  *
@@ -74,12 +72,13 @@ public class KeychainPasswordAndPathImpl extends BaseStandardCredentials impleme
      */
     @DataBoundConstructor
     @SuppressWarnings("unused") // by stapler
-    public KeychainPasswordAndPathImpl(@CheckForNull CredentialsScope scope,
-                                       @CheckForNull String id,
-                                       @CheckForNull String description,
-                                       @CheckForNull String keychainPath,
-                                       @CheckForNull String password,
-                                       @CheckForNull String inSearchPath) {
+    public KeychainPasswordAndPathImpl(
+            @CheckForNull CredentialsScope scope,
+            @CheckForNull String id,
+            @CheckForNull String description,
+            @CheckForNull String keychainPath,
+            @CheckForNull String password,
+            @CheckForNull String inSearchPath) {
         super(scope, id, description);
         this.keychainPath = Util.fixNull(keychainPath);
         this.password = Secret.fromString(password);
@@ -158,7 +157,7 @@ public class KeychainPasswordAndPathImpl extends BaseStandardCredentials impleme
     }
 
     public static List<KeychainPasswordAndPathImpl> getAllKeychainInfo() {
-        return CredentialsProvider.lookupCredentials(KeychainPasswordAndPathImpl.class, (hudson.model.Item)null, ACL.SYSTEM, Collections.emptyList());
+        return CredentialsProvider.lookupCredentials(
+                KeychainPasswordAndPathImpl.class, (hudson.model.Item) null, ACL.SYSTEM, Collections.emptyList());
     }
-
 }

@@ -10,8 +10,7 @@ public class Keychain {
     private Secret keychainPassword;
     private Boolean inSearchPath;
 
-    public Keychain() {
-    }
+    public Keychain() {}
 
     @Deprecated
     @DataBoundConstructor

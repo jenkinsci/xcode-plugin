@@ -7,8 +7,7 @@ public class Team {
     private String teamName;
     private String teamID;
 
-    public Team() {
-    }
+    public Team() {}
 
     @DataBoundConstructor
     public Team(String teamName, String teamID) {
@@ -31,5 +30,4 @@ public class Team {
     public void setTeamID(String teamID) {
         this.teamID = teamID;
     }
-    
 }

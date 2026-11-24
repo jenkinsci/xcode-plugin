@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
-
 /**
  * Created by ud10404 on 5/9/14.
  */
@@ -16,23 +15,23 @@ public class XcodeBuildListParser {
 
     public XcodeBuildListParser(String xcodebuildListOutput) {
 
-        if(xcodebuildListOutput == null) {
+        if (xcodebuildListOutput == null) {
             return;
         }
 
-        String [] lines = xcodebuildListOutput.split("\n");
+        String[] lines = xcodebuildListOutput.split("\n");
         List<String> curList = null;
-        for(String line : lines) {
+        for (String line : lines) {
             line = line.trim();
             if (StringUtils.isEmpty(line)) {
                 curList = null;
-            } else if("Targets:".equals(line)) {
+            } else if ("Targets:".equals(line)) {
                 curList = targets;
-            } else if("Build Configurations:".equals(line)) {
+            } else if ("Build Configurations:".equals(line)) {
                 curList = configurations;
-            } else if("Schemes:".equals(line)) {
+            } else if ("Schemes:".equals(line)) {
                 curList = schemes;
-            } else if(curList != null) {
+            } else if (curList != null) {
                 curList.add(line);
             }
         }

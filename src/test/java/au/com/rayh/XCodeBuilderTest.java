@@ -24,6 +24,9 @@
 
 package au.com.rayh;
 
+import static java.util.Arrays.asList;
+import static org.junit.Assert.*;
+
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -32,22 +35,17 @@ import hudson.model.TaskListener;
 import hudson.plugins.xcode.XcodeInstallation;
 import hudson.plugins.xcode.XcodeXipInstaller;
 import hudson.tools.InstallSourceProperty;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Collections;
-
-import static org.junit.Assert.*;
-import static java.util.Arrays.asList;
-
 
 public class XCodeBuilderTest {
 
@@ -58,39 +56,46 @@ public class XCodeBuilderTest {
     public TemporaryFolder temp = new TemporaryFolder();
 
     @Before
-    public void setUp() {
-    }
+    public void setUp() {}
 
     @After
-    public void tearDown() {
-    }
+    public void tearDown() {}
 
     @Test
     public void shouldSplitXcodeBuildArgumentsWithoutEscapedSpaces() throws Exception {
-        assertEquals(Collections.singletonList("GCC_SYMBOLS_PRIVATE_EXTERN=NO"),
-            XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO"));
-        assertEquals(asList("GCC_SYMBOLS_PRIVATE_EXTERN=NO", "COPY_PHASE_STRIP=NO"),
-            XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO COPY_PHASE_STRIP=NO"));
+        assertEquals(
+                Collections.singletonList("GCC_SYMBOLS_PRIVATE_EXTERN=NO"),
+                XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO"));
+        assertEquals(
+                asList("GCC_SYMBOLS_PRIVATE_EXTERN=NO", "COPY_PHASE_STRIP=NO"),
+                XCodeBuilder.splitXcodeBuildArguments("GCC_SYMBOLS_PRIVATE_EXTERN=NO COPY_PHASE_STRIP=NO"));
     }
 
     @Test
     public void shouldSplitXcodeBuildArgumentsWithEscapedSpaces() throws Exception {
-        assertEquals(Collections.singletonList("CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
-            XCodeBuilder.splitXcodeBuildArguments("CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
-        assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
-        assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution", "C=D"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution\" C=D"));
+        assertEquals(
+                Collections.singletonList("CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
+                XCodeBuilder.splitXcodeBuildArguments("CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
+        assertEquals(
+                asList("A=B", "CODE_SIGN_IDENTITY=iPhone Developer: Todd Kirby"),
+                XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=iPhone\\ Developer:\\ Todd\\ Kirby"));
+        assertEquals(
+                asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution", "C=D"),
+                XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution\" C=D"));
     }
+
     @Test
     public void shouldUnquoteWhenSplittingXcodeBuildArgumentsWithIncompleteDoubleQuote() throws Exception {
-        assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution"));
+        assertEquals(
+                asList("A=B", "CODE_SIGN_IDENTITY=iPhone Distribution"),
+                XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY=\"iPhone Distribution"));
     }
+
     @Test
     public void shouldUnquoteWhenSplittingXcodeBuildArgumentsWithIncompleteSingleQuote() throws Exception {
-        assertEquals(asList("A=B", "CODE_SIGN_IDENTITY=iPhone"),
-            XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY='iPhone"));
+        assertEquals(
+                asList("A=B", "CODE_SIGN_IDENTITY=iPhone"),
+                XCodeBuilder.splitXcodeBuildArguments("A=B CODE_SIGN_IDENTITY='iPhone"));
     }
 
     @Test
@@ -99,20 +104,22 @@ public class XCodeBuilderTest {
         File dummyXip = new File(dummyDir, "Xcode_27.3_beta_2.xip");
         Files.writeString(dummyXip.toPath(), "mock xip", StandardCharsets.UTF_8);
 
-        XcodeXipInstaller installer = new XcodeXipInstaller(
-                null, dummyXip.toURI().toURL().toString(), "Xcode.app/Contents/Developer") {
-            @Override
-            protected boolean isXipAvailable(Node node) {
-                return true;
-            }
+        XcodeXipInstaller installer =
+                new XcodeXipInstaller(null, dummyXip.toURI().toURL().toString(), "Xcode.app/Contents/Developer") {
+                    @Override
+                    protected boolean isXipAvailable(Node node) {
+                        return true;
+                    }
 
-            @Override
-            protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log)
-                    throws IOException, InterruptedException {
-                destinationDir.child("Xcode-beta.app/Contents/Developer").mkdirs();
-                return 0;
-            }
-        };
+                    @Override
+                    protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log)
+                            throws IOException, InterruptedException {
+                        destinationDir
+                                .child("Xcode-beta.app/Contents/Developer")
+                                .mkdirs();
+                        return 0;
+                    }
+                };
 
         XcodeInstallation installation = new XcodeInstallation(
                 "Xcode 27.3 beta 2",
@@ -127,11 +134,12 @@ public class XCodeBuilderTest {
         Node node = XCodeBuilder.resolveExecutionNode(null, j.jenkins.getRootPath());
         assertNotNull(node);
 
-        String resolved = XCodeBuilder.resolveAndApplyXcodeDeveloperDir(
-                "Xcode 27.3 beta 2", node, envs, TaskListener.NULL);
+        String resolved =
+                XCodeBuilder.resolveAndApplyXcodeDeveloperDir("Xcode 27.3 beta 2", node, envs, TaskListener.NULL);
 
         assertNotNull(resolved);
-        assertTrue("Expected DEVELOPER_DIR to point to Xcode-beta.app/Contents/Developer, got: " + resolved,
+        assertTrue(
+                "Expected DEVELOPER_DIR to point to Xcode-beta.app/Contents/Developer, got: " + resolved,
                 resolved.replace('\\', '/').endsWith("Xcode-beta.app/Contents/Developer"));
         assertEquals(resolved, envs.get("DEVELOPER_DIR"));
     }

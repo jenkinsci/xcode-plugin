@@ -29,17 +29,16 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType(name="error")
+@XmlType(name = "error")
 @XmlAccessorType(XmlAccessType.NONE)
 public class TestError {
     @XmlAttribute
     String message;
-    
+
     @XmlAttribute
     String type;
 
-    public TestError() {
-    }
+    public TestError() {}
 
     public TestError(String message, String type) {
         this.message = message;

@@ -42,8 +42,11 @@ public interface KeychainPasswordAndPath extends StandardCredentials, PasswordCr
      *
      */
     Secret getPassword();
+
     String getKeychainPath();
+
     boolean isInSearchPath();
+
     String getInSearchPath();
 
     /**

@@ -1,7 +1,7 @@
 package au.com.rayh;
 
-import org.kohsuke.stapler.DataBoundConstructor;
 import hudson.EnvVars;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class ProvisioningProfile {
 
@@ -10,8 +10,7 @@ public class ProvisioningProfile {
     private String provisioningProfileAppId;
     private String provisioningProfileUUID;
 
-    public ProvisioningProfile() {
-    }
+    public ProvisioningProfile() {}
 
     @DataBoundConstructor
     public ProvisioningProfile(String provisioningProfileAppId, String provisioningProfileUUID) {
@@ -36,7 +35,8 @@ public class ProvisioningProfile {
     }
 
     public String toPlist(EnvVars envs) {
-        return PLIST_FORMAT.replace("${APP_ID}", envs.expand(provisioningProfileAppId))
+        return PLIST_FORMAT
+                .replace("${APP_ID}", envs.expand(provisioningProfileAppId))
                 .replace("${UUID}", envs.expand(provisioningProfileUUID));
     }
 }

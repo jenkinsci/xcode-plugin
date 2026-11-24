@@ -24,9 +24,15 @@
 
 package hudson.plugins.xcode;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import hudson.AbortException;
 import hudson.FilePath;
-import hudson.Launcher;
 import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
@@ -40,13 +46,6 @@ import java.nio.file.Files;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class XcodeXipInstallerTest {
 
@@ -89,7 +88,8 @@ public class XcodeXipInstallerTest {
 
     @Test
     public void testConstructorAndGetters() {
-        XcodeXipInstaller installer = new XcodeXipInstaller("osx", "https://example.com/Xcode.xip", "Xcode.app/Contents/Developer");
+        XcodeXipInstaller installer =
+                new XcodeXipInstaller("osx", "https://example.com/Xcode.xip", "Xcode.app/Contents/Developer");
         assertEquals("osx", installer.getLabel());
         assertEquals("https://example.com/Xcode.xip", installer.getUrl());
         assertEquals("Xcode.app/Contents/Developer", installer.getSubdir());
@@ -102,7 +102,8 @@ public class XcodeXipInstallerTest {
 
     @Test
     public void testResolveHomeWithSubdir() throws Exception {
-        XcodeXipInstaller installer = new XcodeXipInstaller(null, "https://example.com/Xcode.xip", "CustomApp.app/Contents/Developer");
+        XcodeXipInstaller installer =
+                new XcodeXipInstaller(null, "https://example.com/Xcode.xip", "CustomApp.app/Contents/Developer");
         FilePath baseDir = new FilePath(temp.newFolder());
         FilePath resolved = installer.resolveHome(baseDir);
         assertEquals(baseDir.child("CustomApp.app/Contents/Developer").getRemote(), resolved.getRemote());
@@ -182,7 +183,8 @@ public class XcodeXipInstallerTest {
         Files.writeString(dummyXip.toPath(), "mock xip content", StandardCharsets.UTF_8);
 
         String fileUrl = dummyXip.toURI().toURL().toString();
-        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(fileUrl, "CustomXcode.app/Contents/Developer");
+        TestableXcodeXipInstaller installer =
+                new TestableXcodeXipInstaller(fileUrl, "CustomXcode.app/Contents/Developer");
         installer.simulateCustomSubdir = true;
 
         XcodeInstallation tool = new XcodeInstallation("Xcode Custom", null, null);
@@ -221,13 +223,15 @@ public class XcodeXipInstallerTest {
         File dummyXip2 = new File(dummyRepoDir, "Xcode2.xip");
         Files.writeString(dummyXip2.toPath(), "mock 2", StandardCharsets.UTF_8);
 
-        TestableXcodeXipInstaller installer1 = new TestableXcodeXipInstaller(dummyXip1.toURI().toURL().toString(), null);
+        TestableXcodeXipInstaller installer1 =
+                new TestableXcodeXipInstaller(dummyXip1.toURI().toURL().toString(), null);
         XcodeInstallation tool = new XcodeInstallation("Xcode Cache", null, null);
         installer1.performInstallation(tool, j.jenkins, TaskListener.NULL);
         assertEquals(1, installer1.extractCount);
 
         // Installer with different URL targeting the same tool installation directory
-        TestableXcodeXipInstaller installer2 = new TestableXcodeXipInstaller(dummyXip2.toURI().toURL().toString(), null);
+        TestableXcodeXipInstaller installer2 =
+                new TestableXcodeXipInstaller(dummyXip2.toURI().toURL().toString(), null);
         installer2.performInstallation(tool, j.jenkins, TaskListener.NULL);
         assertEquals(1, installer2.extractCount);
     }
@@ -239,7 +243,8 @@ public class XcodeXipInstallerTest {
         Files.writeString(dummyXip.toPath(), "mock", StandardCharsets.UTF_8);
 
         String subdir = "CustomXcode.app/Contents/Developer";
-        TestableXcodeXipInstaller installer = new TestableXcodeXipInstaller(dummyXip.toURI().toURL().toString(), subdir);
+        TestableXcodeXipInstaller installer =
+                new TestableXcodeXipInstaller(dummyXip.toURI().toURL().toString(), subdir);
         installer.simulateCustomSubdir = true;
 
         XcodeInstallation tool = new XcodeInstallation("Xcode Reinstall", null, null);
@@ -405,7 +410,8 @@ public class XcodeXipInstallerTest {
         };
         try {
             installerHttps.downloadArchive("https://127.0.0.1:9/unreachable.xip", target, j.jenkins, TaskListener.NULL);
-        } catch (IOException expected) {}
+        } catch (IOException expected) {
+        }
 
         // Branch 2: http:// URL but curl NOT available
         XcodeXipInstaller installerNoCurl = new XcodeXipInstaller(null, "http://127.0.0.1:9/unreachable.xip", null) {
@@ -416,7 +422,8 @@ public class XcodeXipInstallerTest {
         };
         try {
             installerNoCurl.downloadArchive("http://127.0.0.1:9/unreachable.xip", target, j.jenkins, TaskListener.NULL);
-        } catch (IOException expected) {}
+        } catch (IOException expected) {
+        }
     }
 
     @Test
@@ -445,7 +452,8 @@ public class XcodeXipInstallerTest {
 
         try {
             installer.downloadArchive("http://127.0.0.1:9/dummy.xip", target, j.jenkins, TaskListener.NULL);
-        } catch (IOException expected) {}
+        } catch (IOException expected) {
+        }
     }
 
     @Test
@@ -474,12 +482,14 @@ public class XcodeXipInstallerTest {
 
         try {
             installer.downloadArchive("http://127.0.0.1:9/dummy.xip", target, j.jenkins, TaskListener.NULL);
-        } catch (IOException expected) {}
+        } catch (IOException expected) {
+        }
     }
 
     @Test
     public void testResolveHomeBetaAppWithDefaultSubdir() throws Exception {
-        XcodeXipInstaller installer = new XcodeXipInstaller(null, "https://example.com/Xcode_beta.xip", XcodeXipInstaller.DEFAULT_SUBDIR);
+        XcodeXipInstaller installer =
+                new XcodeXipInstaller(null, "https://example.com/Xcode_beta.xip", XcodeXipInstaller.DEFAULT_SUBDIR);
         FilePath baseDir = new FilePath(temp.newFolder());
         FilePath betaDeveloper = baseDir.child("Xcode-beta.app/Contents/Developer");
         betaDeveloper.mkdirs();
@@ -506,21 +516,23 @@ public class XcodeXipInstallerTest {
         Files.writeString(localXip.toPath(), "local xip archive", StandardCharsets.UTF_8);
 
         final FilePath[] extractedFrom = new FilePath[1];
-        XcodeXipInstaller installer = new XcodeXipInstaller(
-                null, localXip.toURI().toURL().toString(), XcodeXipInstaller.DEFAULT_SUBDIR) {
-            @Override
-            protected boolean isXipAvailable(Node node) {
-                return true;
-            }
+        XcodeXipInstaller installer =
+                new XcodeXipInstaller(null, localXip.toURI().toURL().toString(), XcodeXipInstaller.DEFAULT_SUBDIR) {
+                    @Override
+                    protected boolean isXipAvailable(Node node) {
+                        return true;
+                    }
 
-            @Override
-            protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log)
-                    throws IOException, InterruptedException {
-                extractedFrom[0] = archive;
-                destinationDir.child("Xcode-beta.app/Contents/Developer").mkdirs();
-                return 0;
-            }
-        };
+                    @Override
+                    protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log)
+                            throws IOException, InterruptedException {
+                        extractedFrom[0] = archive;
+                        destinationDir
+                                .child("Xcode-beta.app/Contents/Developer")
+                                .mkdirs();
+                        return 0;
+                    }
+                };
 
         XcodeInstallation tool = new XcodeInstallation("Xcode 27.3 beta 2", null, null);
         FilePath installedPath = installer.performInstallation(tool, j.jenkins, TaskListener.NULL);
@@ -539,18 +551,18 @@ public class XcodeXipInstallerTest {
         File localXip = new File(dummyRepoDir, "Xcode_bad.xip");
         Files.writeString(localXip.toPath(), "mock xip", StandardCharsets.UTF_8);
 
-        XcodeXipInstaller installer = new XcodeXipInstaller(
-                null, localXip.toURI().toURL().toString(), "NonExistent.app/Contents/Developer") {
-            @Override
-            protected boolean isXipAvailable(Node node) {
-                return true;
-            }
+        XcodeXipInstaller installer =
+                new XcodeXipInstaller(null, localXip.toURI().toURL().toString(), "NonExistent.app/Contents/Developer") {
+                    @Override
+                    protected boolean isXipAvailable(Node node) {
+                        return true;
+                    }
 
-            @Override
-            protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log) {
-                return 0;
-            }
-        };
+                    @Override
+                    protected int extractXip(FilePath archive, FilePath destinationDir, Node node, TaskListener log) {
+                        return 0;
+                    }
+                };
 
         XcodeInstallation tool = new XcodeInstallation("Xcode Bad", null, null);
         try {
