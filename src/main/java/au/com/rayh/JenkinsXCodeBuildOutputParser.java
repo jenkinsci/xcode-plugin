@@ -61,7 +61,42 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
 	this.ignoreTestResults = false;
 
         testReportsDir = workspace.child("test-reports");
-        testReportsDir.mkdirs();
+        // Use the robust method to ensure the test reports directory is clean and ready.
+        ensureDirectoryIsCleanAndExists(testReportsDir);
+    }
+
+    /**
+     * Cleans and robustly recreates the specified directory.
+     * This method handles existing directories, regular files, and broken symbolic links.
+     * It ensures that after execution, the path exists and is an empty directory.
+     *
+     * @param dir The directory to clean and create.
+     * @throws IOException If the cleanup or creation operation fails.
+     * @throws InterruptedException If the operation is interrupted.
+     */
+    private void ensureDirectoryIsCleanAndExists(FilePath dir) throws IOException, InterruptedException {
+        try {
+            if (dir.exists()) {
+                // Original behavior: recursively delete the directory to ensure it's empty.
+                dir.deleteRecursive();
+            }
+        } catch (IOException e) {
+            // This can fail on broken symbolic links. We'll try a direct delete.
+            try {
+                dir.delete();
+            } catch (IOException ignored) {
+                // Ignore and let mkdirs() throw the final exception if the path is still blocked.
+            }
+        }
+
+        // If after all cleanup attempts, the path still exists but is not a directory,
+        // which can happen with complex filesystem issues, perform one last delete.
+        if (dir.exists() && !dir.isDirectory()) {
+            dir.delete();
+        }
+
+        // Create the directory (and any parent directories if necessary).
+        dir.mkdirs();
     }
 
     public void setConsoleLog(boolean consoleLog) {
@@ -79,15 +114,12 @@ public class JenkinsXCodeBuildOutputParser extends XCodeBuildOutputParser {
 	    // Fix not to use timestamp for log file name. (Use "xcodebuild.log" as a fixed file name)
 	    // Because using a timestamp as a filename, No way to know it with a script etc.
             FilePath logFilePath = buildDirectory.child(logfileOutputDirectory);
-            // clean Directory
-            if(logFilePath.exists()) {
-                logFilePath.deleteRecursive();
-            }
-            // Create if non-existent
-            if (!logFilePath.exists()) {
-                logFilePath.mkdirs();
-            }
-            logFileOutputStream = new BufferedOutputStream(logFilePath.child("xcodebuild.log").write(),1024*512);
+            
+            // Recursively clean the directory and ensure it exists,
+            // without failing on broken symbolic links or stray files.
+            ensureDirectoryIsCleanAndExists(logFilePath);
+
+            logFileOutputStream = new BufferedOutputStream(logFilePath.child("xcodebuild.log").write(), 1024*512);
         }
     }
     
