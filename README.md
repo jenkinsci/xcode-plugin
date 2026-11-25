@@ -1,5 +1,11 @@
-Xcode plugin
-------------
+# Xcode Plugin
+
+[![Build Status](https://ci.jenkins.io/buildStatus/icon?job=Plugins/xcode-plugin/master)](https://ci.jenkins.io/blue/organizations/jenkins/Plugins%2Fxcode-plugin/branches/)
+[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/xcode-plugin.svg)](https://plugins.jenkins.io/xcode-plugin)
+[![GitHub release](https://img.shields.io/github/release/jenkinsci/xcode-plugin.svg?label=changelog)](https://github.com/jenkinsci/xcode-plugin/releases/latest)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/xcode-plugin.svg?color=blue)](https://plugins.jenkins.io/xcode-plugin)
+
+## Introduction
 
 This plugin adds the ability to call Xcode command line tools to automate build and packaging applications, tools and frameworks for Apple systems (iOS, iPadOS, macOS, _etc._).
 *  Report all issues or features requests in Jira : https://issues.jenkins.io/issues/?jql=component%20%3D%20xcode-plugin
@@ -467,3 +473,7 @@ that are important for our usage on a slave or a master :
 
     sudo xcode-select -switch
     /Applications/Xcode.app/Contents/Developer/
+
+## License
+
+Licensed under MIT License. See [LICENSE](LICENSE) for details.
